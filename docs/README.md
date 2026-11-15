@@ -4,6 +4,7 @@ Keep project explanations, specifications, diagrams and exported office document
 
 | File | Purpose |
 | --- | --- |
+| `ACTION-ROADMAP.md` / `.docx` | Current Version 2.1 registration, first sweep, Manager handoff and specialist-request flow |
 | `VERSION-2-GUIDE.md` / `.docx` | Current Version 2 operator walkthrough and limitations |
 | `CLIENT-WORKFLOW.md` | Version 1 client workflow snapshot |
 | `CLIENT-WORKFLOW-V1.docx` | Word export of the original Google Doc |

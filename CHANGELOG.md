@@ -1,5 +1,16 @@
 # Changelog
 
+## Version 2.1 — action-first roadmap (v2.1.0)
+
+- Six-step Director roadmap with one primary action per stage.
+- Restaurant owner/contact fields, linked floor plan and immediate printable QR after registration.
+- Dedicated first-sweep screen; equipment capture returns to the sweep.
+- Manager handoff with four saved weekly visit dates shown in the schedule.
+- Explicit Manager requests for repair or preventive specialist service; subordinate work progress is visible without granting worker actions.
+- Gantt and database details moved behind the main workflow.
+- Ten workflow tests and production-build validation; browser/device checks remain pending.
+
+
 ## Version 2 — operator workflows (v2.0.0)
 
 - Distinct Director, Manager and Subcontractor interfaces with a visible working selector and level/context labels.

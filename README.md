@@ -1,6 +1,8 @@
 # Juggle — Cocozza Maintenance OS (MVP)
 
-## Current version: Version 2
+## Current version: Version 2.1 — action roadmap
+
+The current action-first update is documented in the [restaurant roadmap guide](docs/ACTION-ROADMAP.md). Register → document → hand off → inspect → request work → review.
 
 The operator-focused prototype is Version 2, with Director / Manager / Subcontractor interfaces, a live-data Gantt schedule and guided inspections. See the [Version 2 guide](docs/VERSION-2-GUIDE.md). The top **Interface** dropdown changes the working screens. Open https://juggle-mocha.vercel.app.
 

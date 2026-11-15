@@ -1,4 +1,6 @@
-# Juggle prototype status — Version 2
+# Juggle prototype status — Version 2.1
+
+The [action-roadmap guide](ACTION-ROADMAP.md) describes the current registration → sweep → Manager handoff flow, contact fields and specialist requests.
 
 The current release adds distinct Director, Manager and Subcontractor interfaces, a live-data Gantt schedule, guided room-by-room walkthroughs and CSV reports. Read [Version 2 guide](VERSION-2-GUIDE.md) for current instructions. The implementation notes below describe the underlying prototype architecture; original Administrator / Inspector / Contractor terminology maps to Director / Manager / Subcontractor.
 
