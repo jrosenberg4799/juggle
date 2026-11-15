@@ -75,6 +75,7 @@ export default function Home() {
     >(null),
     [toast, setToast] = useState(""),
     [busy, setBusy] = useState(false),
+    [returnToRoadmap, setReturnToRoadmap] = useState(false),
     [mobile, setMobile] = useState(false),
     [tab, setTab] = useState("Overview"),
     [account, setAccount] = useState(false),
@@ -168,7 +169,8 @@ export default function Home() {
     role === "Director"
       ? "Jesse · Director"
       : role === "Manager"
-        ? "Alex · Manager"
+        ? (data.properties.find((p) => p.id === propertyId)?.inspectionSchedule
+            ?.managerName || "Alex") + " · Manager"
         : "Sam · Subcontractor";
   const admin = role === "Director";
   const property =
@@ -431,7 +433,7 @@ export default function Home() {
                 {asset
                   ? asset.name
                   : view === "Overview"
-                    ? "Keep every kitchen running."
+                    ? "What is the next action?"
                     : (
                         {
                           Inspections: "Check the kitchen.",
@@ -446,7 +448,7 @@ export default function Home() {
                 {asset
                   ? `${asset.area} / ${data.properties.find((p) => p.id === asset.propertyId)?.name}`
                   : view === "Overview"
-                    ? "Set up the space. Plan the care. Review the results."
+                    ? "Follow the restaurant roadmap. One clear step at a time."
                     : role === "Manager"
                       ? "One room at a time. Check it, record it, move on."
                       : role === "Subcontractor"
@@ -454,7 +456,7 @@ export default function Home() {
                         : "Every job has an owner, a date and a next step."}
               </p>
             </div>
-            {admin && (
+            {admin && view !== "Overview" && (
               <button
                 className="primary"
                 onClick={() =>
@@ -484,8 +486,25 @@ export default function Home() {
           )}
           {asset ? (
             <>
-              <button className="back" onClick={() => setSelected(null)}>
-                <ArrowLeft size={16} /> Back to asset register
+              <button
+                className="back"
+                onClick={() => {
+                  setSelected(null);
+                  setView(
+                    role === "Director"
+                      ? "Overview"
+                      : role === "Manager"
+                        ? "Inspections"
+                        : "Work orders",
+                  );
+                }}
+              >
+                <ArrowLeft size={16} /> Back to{" "}
+                {role === "Director"
+                  ? "restaurant roadmap"
+                  : role === "Manager"
+                    ? "walkthrough"
+                    : "assigned jobs"}
               </button>
               {asset.pendingApproval && (
                 <div className="notice">
@@ -515,6 +534,37 @@ export default function Home() {
                     {asset.make} · {asset.model}
                   </p>
                   <p className="muted">Asset ID · {asset.id.slice(0, 12)}</p>
+                  {admin && (
+                    <label className="secondary">
+                      Update equipment photo
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        capture="environment"
+                        hidden
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          try {
+                            const photo = await readFile(f);
+                            setData((s) => ({
+                              ...s,
+                              assets: s.assets.map((a) =>
+                                a.id === asset.id ? { ...a, photo } : a,
+                              ),
+                              events: [
+                                log(asset.id, "Equipment photo updated"),
+                                ...s.events,
+                              ],
+                            }));
+                            setToast("Equipment photo updated");
+                          } catch (error) {
+                            setToast((error as Error).message);
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
                   <button className="secondary" onClick={() => setModal("qr")}>
                     <QrCode size={16} /> Asset QR code
                   </button>
@@ -753,9 +803,32 @@ export default function Home() {
                 setSelected(id);
                 setTab("Overview");
               }}
-              onRegister={() => setModal("asset")}
+              onRegister={() => {
+                setReturnToRoadmap(role === "Director");
+                setModal("asset");
+              }}
               onSchedule={showSchedule}
               onSetup={() => go("Properties")}
+              onNewRestaurant={() => {
+                setSelected(null);
+                setModal("property");
+              }}
+              onRestaurantQR={() => {
+                setSelected(null);
+                setModal("qr");
+              }}
+              onAddRoom={() => setModal("area")}
+              onRole={(next) => {
+                setRole(next);
+                setSelected(null);
+                setView(
+                  next === "Manager"
+                    ? "Inspections"
+                    : next === "Subcontractor"
+                      ? "Work orders"
+                      : "Overview",
+                );
+              }}
               notify={setToast}
             />
           ) : view === "Properties" ? (
@@ -1145,7 +1218,7 @@ export default function Home() {
             <div className="panel-title">
               <h2>
                 {modal === "property"
-                  ? "Add a property"
+                  ? "Step 1 · Register restaurant"
                   : modal === "asset"
                     ? "Register equipment"
                     : modal === "schedule"
@@ -1197,6 +1270,11 @@ export default function Home() {
                         name: String(f.get("name")),
                         address: String(f.get("address")),
                         client: String(f.get("client")),
+                        ownerName: String(f.get("client")),
+                        contactName: String(f.get("contactName")),
+                        contactEmail: String(f.get("contactEmail")),
+                        contactPhone: String(f.get("contactPhone")),
+                        registeredAt: new Date().toISOString(),
                         areas: ["Kitchen"],
                       };
                       setData((s) => ({
@@ -1204,7 +1282,7 @@ export default function Home() {
                         properties: [...s.properties, p],
                       }));
                       setPropertyId(p.id);
-                      go("Properties");
+                      go("Overview");
                     }
                     if (modal === "area") {
                       const name = String(f.get("name")).trim();
@@ -1249,9 +1327,16 @@ export default function Home() {
                           ...s.events,
                         ],
                       }));
-                      setSelected(a.id);
+                      setSelected(
+                        returnToRoadmap && role === "Director" ? null : a.id,
+                      );
                       setTab("Overview");
-                      setView("Asset register");
+                      setView(
+                        returnToRoadmap && role === "Director"
+                          ? "Overview"
+                          : "Asset register",
+                      );
+                      setReturnToRoadmap(false);
                     }
                     if (modal === "schedule") {
                       if (String(f.get("startDate")) > String(f.get("date")))
@@ -1290,8 +1375,12 @@ export default function Home() {
                       setSelected(null);
                       setView("Maintenance");
                     }
-                    setModal(null);
-                    setToast("Saved successfully");
+                    setModal(modal === "property" ? "qr" : null);
+                    setToast(
+                      modal === "property"
+                        ? "Restaurant registered. Print its QR, then start the documentation sweep."
+                        : "Saved successfully",
+                    );
                   } catch (error) {
                     setToast((error as Error).message);
                   } finally {
@@ -1332,8 +1421,23 @@ export default function Home() {
                       Client / owner
                       <input name="client" required />
                     </label>
+                    <label className="field">
+                      Main contact name
+                      <input name="contactName" required />
+                    </label>
+                    <div className="form-row">
+                      <label className="field">
+                        Contact email
+                        <input name="contactEmail" type="email" required />
+                      </label>
+                      <label className="field">
+                        Contact phone
+                        <input name="contactPhone" type="tel" />
+                      </label>
+                    </div>
                     <p className="muted">
-                      A Kitchen area will be created automatically.
+                      A restaurant QR code and Kitchen area will be created
+                      automatically.
                     </p>
                   </>
                 )}

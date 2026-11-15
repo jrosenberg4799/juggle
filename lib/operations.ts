@@ -84,7 +84,7 @@ export function taskTransition(
     ...(task.status === "Issue reported"
       ? {
           owner: "Subcontractor" as const,
-          kind: "Repair" as const,
+          kind: task.kind || ("Repair" as const),
           startDate: dateKey(),
           date: task.date < dateKey() ? dateKey() : task.date,
         }
@@ -134,7 +134,7 @@ export function submitWalkthrough(state: State, id: string): State {
     return {
       id: uid(),
       assetId,
-      actor: "Alex · Manager",
+      actor: (round.managerName || "Alex") + " · Manager",
       time: now,
       text: `Weekly walkthrough: ${a.result}${a.reading ? " · Reading: " + a.reading : ""}${a.careDone ? " · Routine care recorded" : ""}${a.note ? " — " + a.note : ""}`,
       evidence: a.photo,

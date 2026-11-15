@@ -38,6 +38,7 @@ import {
 } from "@/lib/operations";
 import { MediaImage, MediaLink, uploadFile } from "@/lib/media";
 import { Gantt } from "./gantt";
+import { RestaurantJourney } from "./restaurant-journey";
 type Props = {
   data: State;
   setData: Dispatch<SetStateAction<State>>;
@@ -49,6 +50,10 @@ type Props = {
   onRegister: () => void;
   onSchedule: () => void;
   onSetup: () => void;
+  onNewRestaurant: () => void;
+  onRestaurantQR: () => void;
+  onAddRoom: () => void;
+  onRole: (role: Role) => void;
   notify: (text: string) => void;
 };
 export function Operations(p: Props) {
@@ -56,7 +61,8 @@ export function Operations(p: Props) {
   const [jobId, setJobId] = useState<string | null>(null),
     [walking, setWalking] = useState(false),
     [index, setIndex] = useState(0),
-    [report, setReport] = useState(false);
+    [report, setReport] = useState(false),
+    [requesting, setRequesting] = useState(false);
   const property =
     data.properties.find((x) => x.id === p.propertyId) || data.properties[0];
   const assets = data.assets.filter(
@@ -68,6 +74,7 @@ export function Operations(p: Props) {
   const rounds = (data.walkthroughs || []).filter(
     (r) => r.propertyId === property.id,
   );
+  const managerName = property.inspectionSchedule?.managerName || "Alex";
   const draft = rounds.find((r) => !r.submittedAt);
   const job = data.tasks.find((t) => t.id === jobId);
   const waiting = tasks.filter((t) => t.status === "Awaiting verification");
@@ -75,6 +82,38 @@ export function Operations(p: Props) {
   const pending = data.assets.filter(
     (a) => a.propertyId === property.id && a.pendingApproval,
   );
+  const scheduleRows: Task[] = [
+    ...tasks,
+    ...(property.inspectionSchedule?.dates || []).map((date) => {
+      const visit = rounds.find(
+        (r) => r.scheduledDate === date && r.submittedAt,
+      );
+      return {
+        id: "visit:" + date,
+        assetId: "restaurant:" + property.id,
+        scope: "Restaurant" as const,
+        title: "Weekly restaurant walkthrough",
+        date,
+        startDate: date,
+        kind: "Inspection" as const,
+        owner: "Manager" as const,
+        status: visit?.approvedAt
+          ? ("Verified" as const)
+          : visit
+            ? ("Awaiting verification" as const)
+            : ("Scheduled" as const),
+        notes: "",
+      };
+    }),
+  ];
+  function openSchedule(id: string) {
+    if (id.startsWith("visit:")) {
+      p.onRole("Manager");
+      notify("Manager interface opened for the restaurant walkthrough.");
+      return;
+    }
+    setJobId(id);
+  }
   function change(id: string, next: Task["status"], extra: Partial<Task> = {}) {
     try {
       const state = taskTransition(data, id, role, next, extra);
@@ -105,6 +144,11 @@ export function Operations(p: Props) {
           assets.filter((a) => a.area === area).map((a) => a.id),
         ),
         startedAt: new Date().toISOString(),
+        managerName,
+        scheduledDate: property.inspectionSchedule?.dates.find(
+          (date) =>
+            !rounds.some((r) => r.scheduledDate === date && r.submittedAt),
+        ),
         answers: {},
       };
       setData((s) => ({ ...s, walkthroughs: [...(s.walkthroughs || []), r] }));
@@ -292,7 +336,8 @@ export function Operations(p: Props) {
             {role === "Director"
               ? "Jesse · Director — work is not complete until you approve it."
               : role === "Manager"
-                ? "Alex · Manager — simple care is yours; specialist work goes to a subcontractor."
+                ? managerName +
+                  " · Manager — simple care is yours; specialist work goes to a subcontractor."
                 : "Sam · Subcontractor — specialist preventive service and repairs assigned by the Director."}
           </p>
         </div>
@@ -313,64 +358,48 @@ export function Operations(p: Props) {
           </div>
           <Gantt
             tasks={
-              role === "Director"
-                ? tasks
+              role !== "Subcontractor"
+                ? scheduleRows
                 : tasks.filter(
                     (t) =>
                       taskOwner(t) === role && t.status !== "Issue reported",
                   )
             }
             assets={assets}
-            onSelect={setJobId}
+            onSelect={openSchedule}
           />
         </>
       ) : role === "Director" ? (
         <>
-          <div className="ops-summary">
-            <button onClick={p.onSetup}>
-              <span>1 · Set up</span>
-              <strong>{assets.length} pieces of equipment</strong>
-              <small>
-                Restaurants, rooms and QR labels <ArrowRight size={15} />
-              </small>
+          <RestaurantJourney
+            key={property.id}
+            property={property}
+            data={data}
+            setData={setData}
+            onNew={p.onNewRestaurant}
+            onQR={p.onRestaurantQR}
+            onArea={p.onAddRoom}
+            onAsset={p.onRegister}
+            onOpenAsset={p.onAsset}
+            onRole={p.onRole}
+            notify={notify}
+            onReview={() =>
+              document
+                .getElementById("director-decisions")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+          />
+          <details className="panel schedule-details">
+            <summary>View the Gantt schedule & plan additional work</summary>
+            <button className="secondary" onClick={p.onSchedule}>
+              Schedule care or repair
             </button>
-            <button onClick={() => setReport(!report)}>
-              <span>2 · Plan & oversee</span>
-              <strong>
-                {tasks.filter((t) => t.status !== "Verified").length} open jobs
-              </strong>
-              <small>
-                Care, checks and repairs <ArrowRight size={15} />
-              </small>
-            </button>
-            <button
-              onClick={() =>
-                document
-                  .getElementById("director-decisions")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <span>3 · Review & approve</span>
-              <strong>
-                {issues.length +
-                  waiting.length +
-                  pending.length +
-                  rounds.filter((r) => r.submittedAt && !r.approvedAt)
-                    .length}{" "}
-                decisions waiting
-              </strong>
-              <small>
-                Your next actions <ArrowRight size={15} />
-              </small>
-            </button>
-          </div>
-          <div className="ops-actions">
-            <h2>Plan the work before it becomes a problem.</h2>
-            <button className="primary" onClick={p.onSchedule}>
-              <Plus size={18} /> Schedule care or inspection
-            </button>
-          </div>
-          <Gantt tasks={tasks} assets={assets} onSelect={setJobId} />
+            <Gantt
+              tasks={scheduleRows}
+              assets={assets}
+              onSelect={openSchedule}
+            />
+          </details>
           <section id="director-decisions" className="decision-section">
             <div className="ops-section-head">
               <h2>Your decisions</h2>
@@ -444,7 +473,7 @@ export function Operations(p: Props) {
                     </span>
                     <h3>{r.assetIds.length} equipment checks</h3>
                     <p>
-                      Alex · Manager ·{" "}
+                      {r.managerName || managerName} · Manager ·{" "}
                       {new Date(r.submittedAt!).toLocaleDateString()}
                     </p>
                     <RoundReport round={r} data={data} />
@@ -458,6 +487,84 @@ export function Operations(p: Props) {
         </>
       ) : role === "Manager" ? (
         <>
+          <div className="manager-roadmap">
+            <button onClick={startWalk}>
+              <span>1</span> Do the weekly walkthrough
+            </button>
+            <ArrowRight size={18} />
+            <button onClick={() => setRequesting(true)}>
+              <span>2</span> Request specialist work
+            </button>
+            <ArrowRight size={18} />
+            <button
+              onClick={() =>
+                document
+                  .getElementById("specialist-progress")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              <span>3</span> Track the work below you
+            </button>
+          </div>
+          {property.inspectionSchedule && (
+            <div className="manager-assignment">
+              <strong>
+                Assigned by Director · {property.inspectionSchedule.managerName}
+              </strong>
+              <span>
+                Weekly visits:{" "}
+                {property.inspectionSchedule.dates
+                  .map((d) => new Date(d + "T12:00").toLocaleDateString())
+                  .join(" · ")}
+              </span>
+            </div>
+          )}
+          <button
+            className="secondary request-specialist-button"
+            onClick={() => setRequesting(!requesting)}
+          >
+            <Wrench size={18} /> Request a subcontractor
+          </button>
+          {requesting && (
+            <SpecialistRequest
+              assets={assets}
+              onClose={() => setRequesting(false)}
+              onSave={(assetId, kind, title, notes, date) => {
+                const task: Task = {
+                  id: uid(),
+                  assetId,
+                  title,
+                  notes,
+                  date,
+                  startDate: date,
+                  kind,
+                  owner: "Subcontractor",
+                  status: "Issue reported",
+                };
+                setData((s) => ({
+                  ...s,
+                  tasks: [...s.tasks, task],
+                  events: [
+                    {
+                      id: uid(),
+                      assetId,
+                      text: `Manager requested ${kind.toLowerCase()}: ${notes}`,
+                      actor:
+                        (property.inspectionSchedule?.managerName || "Alex") +
+                        " · Manager",
+                      time: new Date().toISOString(),
+                    },
+                    ...s.events,
+                  ],
+                }));
+                setRequesting(false);
+                notify(
+                  "Request sent to Director. A subcontractor is assigned only after review.",
+                );
+              }}
+            />
+          )}
+
           {walking && draft ? (
             <WalkthroughRunner
               key={draft.id}
@@ -494,7 +601,7 @@ export function Operations(p: Props) {
                   <div className="walk-meta">
                     <span>{property.areas.length} rooms</span>
                     <span>{assets.length} appliances</span>
-                    <span>Alex · Manager</span>
+                    <span>{managerName} · Manager</span>
                   </div>
                   <button
                     className="primary big-action"
@@ -638,6 +745,29 @@ export function Operations(p: Props) {
               ))}
           </details>
         </>
+      )}
+      {role === "Manager" && (
+        <section id="specialist-progress">
+          <div className="ops-section-head">
+            <h2>Subcontractor work you can track</h2>
+            <span>View progress · Director assigns and approves</span>
+          </div>
+          <div className="decision-grid">
+            {tasks
+              .filter((t) => taskOwner(t) === "Subcontractor")
+              .map((t) => (
+                <JobCard
+                  key={t.id}
+                  task={t}
+                  asset={assets.find((a) => a.id === t.assetId)}
+                  onOpen={() => setJobId(t.id)}
+                />
+              ))}
+          </div>
+          {!tasks.some((t) => taskOwner(t) === "Subcontractor") && (
+            <p>No specialist requests or assigned jobs yet.</p>
+          )}
+        </section>
       )}
       {role !== "Subcontractor" && (
         <section className="ops-report">
@@ -897,7 +1027,9 @@ function WalkthroughRunner({
   return (
     <section className="inspection-runner">
       <div className="runner-top">
-        <span>WEEKLY WALKTHROUGH · ALEX / MANAGER</span>
+        <span>
+          WEEKLY WALKTHROUGH · {round.managerName || "Alex"} / MANAGER
+        </span>
         <button className="secondary" onClick={onClose}>
           Save & leave
         </button>
@@ -1322,5 +1454,96 @@ function JobDialog({
         )}
       </section>
     </div>
+  );
+}
+function SpecialistRequest({
+  assets,
+  onClose,
+  onSave,
+}: {
+  assets: Asset[];
+  onClose: () => void;
+  onSave: (
+    assetId: string,
+    kind: "Repair" | "Preventive care",
+    title: string,
+    notes: string,
+    date: string,
+  ) => void;
+}) {
+  return (
+    <section className="panel specialist-request">
+      <div className="panel-title">
+        <h2>Request a subcontractor</h2>
+        <button
+          className="icon-button"
+          onClick={onClose}
+          aria-label="Close request"
+        >
+          <X />
+        </button>
+      </div>
+      <p>
+        Tell the Director what you need. This is a request, not an instruction
+        to start work.
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const f = new FormData(e.currentTarget);
+          onSave(
+            String(f.get("asset")),
+            String(f.get("kind")) as "Repair" | "Preventive care",
+            String(f.get("title")),
+            String(f.get("notes")),
+            String(f.get("date")),
+          );
+        }}
+      >
+        <label className="field">
+          Which equipment?
+          <select name="asset" required>
+            {assets.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.area} · {a.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="form-row">
+          <label className="field">
+            What type of help?
+            <select name="kind">
+              <option>Repair</option>
+              <option>Preventive care</option>
+            </select>
+          </label>
+          <label className="field">
+            Requested date
+            <input name="date" type="date" required defaultValue={dateKey()} />
+          </label>
+        </div>
+        <label className="field">
+          Short description
+          <input
+            name="title"
+            required
+            placeholder="e.g. Service the refrigerator before summer"
+          />
+        </label>
+        <label className="field">
+          What did you notice / what service is needed?
+          <textarea name="notes" required />
+        </label>
+        <button className="primary big-action" disabled={!assets.length}>
+          Send request to Director <ArrowRight size={20} />
+        </button>
+        {!assets.length && (
+          <p>
+            Equipment must be registered and approved before requesting work.
+          </p>
+        )}
+      </form>
+    </section>
   );
 }

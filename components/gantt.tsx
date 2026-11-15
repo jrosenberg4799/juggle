@@ -104,7 +104,10 @@ export function Gantt({
                 >
                   <strong>{task.title}</strong>
                   <span>
-                    {asset?.name || "Equipment"} · {taskOwner(task)}
+                    {task.scope === "Restaurant"
+                      ? "Whole restaurant"
+                      : asset?.name || "Equipment"}{" "}
+                    · {taskOwner(task)}
                   </span>
                   <small>{stage(task)}</small>
                 </button>

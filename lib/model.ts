@@ -4,6 +4,17 @@ export type Property = {
   name: string;
   address: string;
   client: string;
+  ownerName?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  registeredAt?: string;
+  sweepCompletedAt?: string;
+  inspectionSchedule?: {
+    managerName: string;
+    dates: string[];
+    assignedAt: string;
+  };
   areas: string[];
   layout?: string;
 };
@@ -31,6 +42,7 @@ export type Task = {
   startedAt?: string;
   completedAt?: string;
   returnReason?: string;
+  scope?: "Restaurant";
   status:
     | "Scheduled"
     | "Issue reported"
@@ -74,6 +86,8 @@ export type Walkthrough = {
   assetIds: string[];
   startedAt: string;
   submittedAt?: string;
+  scheduledDate?: string;
+  managerName?: string;
   approvedAt?: string;
   answers: Record<string, CheckAnswer>;
 };
