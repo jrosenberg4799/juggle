@@ -21,3 +21,5 @@ Keep project explanations, specifications, diagrams and exported office document
 Drafts are proposals, not approved requirements. Regenerate Word exports after editing their Markdown source. Google Docs edits and local exports do not synchronize automatically. Record accepted decisions in the Markdown source and commit them. Small project documents belong in Git; operational equipment photos and customer uploads belong in private object storage, not this repository.
 
 The local folder is `/workspace/juggle` in the Codex cloud workspace. Push commits to GitHub after meaningful changes; synchronization is explicit, not a background folder-sync service. Preserve the original `v1.0.0` tag.
+
+- [Versioning and device preview](VERSIONING-AND-PREVIEW.md) — version 2.5.0.

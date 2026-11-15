@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
 import { ArrowLeft, Menu } from "lucide-react";
+import { version } from "@/package.json";
 import type { Role } from "@/lib/model";
 import type { CloudReceipt } from "@/lib/cloud-receipt";
 export function WorkspaceViewport() {
@@ -44,6 +45,7 @@ export function WorkspaceHeader({
   return (
     <header className="shared-app-header">
       <div className="header-content">
+        <div className="brand-lockup">
         <button
           className="shared-brand"
           onClick={onHome}
@@ -52,6 +54,8 @@ export function WorkspaceHeader({
         >
           juggle<span>®</span>
         </button>
+        <a className="app-version" href="/preview" target="_top" title="Open desktop, iPad and phone preview">v{version}<span> · Preview</span></a>
+        </div>
         <button
           type="button"
           className="shared-tools"

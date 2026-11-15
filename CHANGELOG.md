@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.5.0
+
+- Subtle version label reads directly from package.json.
+- Device preview with Desktop (1440×900), iPad (820×1180), Phone (390×844), and rotation; one live iframe stays mounted when switching sizes.
+
+
 ## Version 2.4 — shared responsive frame (v2.4.0)
 
 - Shared header, role selector, fixed-height save strip, title slot and centered page boundaries across every view.

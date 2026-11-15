@@ -112,6 +112,11 @@ body {
   margin-left: 3px;
   letter-spacing: 0;
 }
+.brand-lockup { display: flex; flex-direction: column; align-items: flex-start; }
+.brand-lockup .shared-brand { min-height: 32px; padding: 0; }
+.brand-lockup .app-version { color: #64748b; font-size: 10px; line-height: 16px; text-decoration: none; white-space: nowrap; letter-spacing: 0; }
+.app-version:hover { text-decoration: underline; }
+@media (max-width: 767px) { .app-version span { display: none; } }
 .shared-tools {
   display: flex;
   align-items: center;
