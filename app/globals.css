@@ -2783,3 +2783,569 @@ header {
     font-size: 12px;
   }
 }
+/* Selected direction: One big next step */
+:root {
+  --bronze: #1749e6;
+  --sage: #167345;
+  --ink: #132137;
+  --muted: #506178;
+  --border: #ced7e4;
+}
+body {
+  background: #f1f4f9;
+  color: var(--ink);
+}
+.primary {
+  background: #1749e6;
+  border-color: #1749e6;
+  font-weight: 700;
+  color: #fff;
+}
+.primary:hover {
+  background: #103cbe;
+}
+.secondary {
+  color: #24364f;
+  border-color: #c2cdde;
+}
+.secondary:hover {
+  background: #edf2ff;
+}
+.focus-app .sidebar {
+  transform: translateX(-100%);
+  transition: transform 0.15s;
+}
+.focus-app .sidebar.open {
+  transform: translateX(0);
+  box-shadow: 12px 0 50px #14203b33;
+}
+.focus-app .main {
+  margin-left: 0;
+  width: 100%;
+}
+.focus-app .menu {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #273b5a;
+}
+.focus-app header {
+  padding-left: max(22px, calc((100vw - 1020px) / 2));
+  padding-right: max(22px, calc((100vw - 1020px) / 2));
+  border-bottom: 2px solid #15243a;
+}
+.focus-app header > span {
+  margin-right: auto;
+  margin-left: 20px;
+}
+.focus-app main {
+  max-width: 1020px;
+  padding: 24px 26px 40px;
+}
+.focus-app .page-heading {
+  display: none;
+}
+.focus-app .role-purpose {
+  display: none;
+}
+.focus-app .ops-location {
+  border: 0;
+  padding: 0 0 20px;
+  margin: 0;
+}
+.focus-app .ops-location select {
+  color: #1d3150;
+  font-size: 17px;
+}
+.focus-app .ops-altitude {
+  background: #e3eaff;
+  color: #1749b3;
+  font-weight: 600;
+}
+.focus-app .interface-switch select {
+  background: #fff;
+  border: 1px solid #acbcd2;
+  color: #193354;
+  font-weight: 700;
+}
+.focus-app .profile select {
+  color: #193354;
+}
+.focus-app .help {
+  display: none;
+}
+.storage-status {
+  padding: 13px max(22px, calc((100vw - 1020px) / 2));
+  font-size: 12px;
+  line-height: 1.7;
+  border-bottom: 1px solid #c8d5e8;
+}
+.storage-status.local {
+  background: #fff0c7;
+  color: #754c00;
+}
+.storage-status.saved {
+  background: #e2f5e9;
+  color: #155d35;
+}
+.storage-status.pending {
+  background: #e6edff;
+  color: #204494;
+}
+.storage-status.failed {
+  background: #ffe5e3;
+  color: #a32222;
+}
+.storage-status strong {
+  font-size: 12px;
+  letter-spacing: 0.4px;
+}
+.storage-status button {
+  font-weight: 700;
+  min-height: 40px;
+}
+.storage-status > span {
+  max-width: 760px;
+}
+.focus-step-strip {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 22px;
+}
+.focus-step-strip button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid #cbd5e4;
+  border-radius: 0;
+  padding: 14px 10px;
+  color: #61718a;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 55px;
+}
+.focus-step-strip button > span {
+  display: grid;
+  place-items: center;
+  background: #dbe3f0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.focus-step-strip button.current {
+  border-color: #1749e6;
+  background: #e4ebff;
+  color: #1749c4;
+}
+.focus-step-strip button.current > span {
+  background: #1749e6;
+  color: #fff;
+}
+.focus-step-strip button.done {
+  border-color: #1b7b4a;
+  color: #1b6c43;
+}
+.focus-step-strip button.done > span {
+  background: #d1ebdc;
+  color: #145d35;
+}
+.journey-stage {
+  border: 1px solid #cbd5e4;
+  box-shadow: 0 6px 28px #213e7210;
+  padding: 32px;
+  border-radius: 10px;
+  background: #fff;
+}
+.journey-stage .eyebrow {
+  font-weight: 750;
+  color: #1749c5;
+  font-size: 12px;
+  letter-spacing: 1.2px;
+}
+.journey-stage h2 {
+  font-size: 38px;
+  letter-spacing: -1.3px;
+  font-weight: 750;
+  color: #15233b;
+  line-height: 1.15;
+}
+.journey-stage-heading p {
+  font-size: 15px;
+  color: #52627a;
+  max-width: 680px;
+}
+.journey-form {
+  max-width: none;
+}
+.journey-form .field {
+  font-size: 13px;
+  color: #243b5d;
+  font-weight: 650;
+}
+.journey-form .field input {
+  background: #fff;
+  border: 1px solid #aebed3;
+  border-radius: 5px;
+  padding: 13px;
+  font-size: 16px;
+  min-height: 49px;
+}
+.journey-form .form-row {
+  gap: 20px;
+}
+.journey-cta {
+  border: 0;
+  padding-top: 8px;
+  margin-top: 20px;
+}
+.operations .journey-cta .primary,
+.operations .journey-form > .primary,
+.operations .journey-stage > .primary {
+  min-height: 60px;
+  font-size: 17px;
+  flex: 1;
+  font-weight: 700;
+  padding: 17px 24px;
+  justify-content: space-between;
+}
+.journey-extras {
+  margin-top: 18px;
+}
+.journey-extras summary,
+.optional-fields summary {
+  color: #52647e;
+  font-size: 13px;
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+.journey-extras .secondary {
+  margin: 10px 10px 0 0;
+}
+.optional-fields {
+  margin-top: 14px;
+  border-top: 1px solid #dce4ef;
+  padding-top: 7px;
+}
+.journey-stage > .secondary {
+  margin-left: 0;
+}
+.sweep-rooms {
+  margin: 20px 0;
+}
+.sweep-actions .primary {
+  min-height: 60px;
+  font-size: 17px;
+  font-weight: 700;
+  background: #1749e6;
+}
+.sweep-actions .secondary {
+  background: #fff;
+}
+.sweep-equipment {
+  color: #243b5d;
+}
+.sweep-equipment small {
+  color: #52647c;
+}
+.journey-confirmation {
+  color: #1b7345;
+  font-weight: 600;
+}
+.handoff-card {
+  background: #e8efff;
+  color: #1749a9;
+}
+.handoff-chain > span {
+  background: #e7eeff;
+  color: #214aa5;
+}
+.schedule-details,
+.decision-section {
+  margin-top: 24px;
+  background: transparent;
+  box-shadow: none;
+  border-color: #cbd6e6;
+  padding: 16px 20px;
+}
+.schedule-details > summary,
+.decision-section > summary {
+  min-height: 46px;
+  font-size: 14px;
+  align-content: center;
+  font-weight: 650;
+  color: #3a4e6d;
+  cursor: pointer;
+}
+.decision-section .ops-section-head {
+  display: none;
+}
+.decision-section .decision-grid {
+  margin-top: 18px;
+}
+.decision-spotlight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border-left: 5px solid #c22b2b;
+  background: #ffe8e6;
+  color: #a51c1c;
+  font-size: 14px;
+}
+.decision-spotlight .secondary {
+  background: #b42323;
+  border-color: #b42323;
+  color: white;
+}
+.operations .badge.amber {
+  background: #fff0c7;
+  color: #825200;
+}
+.operations .badge.green {
+  background: #dcf3e6;
+  color: #17613b;
+}
+.operations .badge {
+  background: #e9eff9;
+  color: #3d5575;
+}
+.operations .manager-roadmap {
+  display: none;
+}
+.walk-start {
+  border-color: #c7d4e6;
+  box-shadow: 0 5px 25px #233e7010;
+}
+.walk-copy h2 {
+  font-size: 38px;
+  letter-spacing: -1px;
+  color: #14233a;
+  font-weight: 750;
+}
+.walk-copy .eyebrow {
+  color: #1749c4;
+  font-weight: 700;
+}
+.walk-copy .primary {
+  background: #1749e6;
+  font-size: 17px;
+}
+.walk-route {
+  background: #e9effa;
+}
+.walk-route > div > span {
+  background: #d6e2ff;
+  color: #1749b8;
+}
+.manager-assignment {
+  background: #e8efff;
+  border-color: #1749e6;
+  color: #234783;
+}
+.manager-assignment > span {
+  color: #3f597d;
+}
+.operations .request-specialist-button {
+  float: right;
+  min-height: 42px;
+  font-size: 12px;
+}
+.inspection-runner {
+  border-color: #afc0dc;
+  box-shadow: 0 8px 28px #22437512;
+}
+.runner-progress {
+  background: #e0e7f3;
+}
+.runner-progress > span {
+  background: #1749e6;
+}
+.runner-top > span {
+  color: #1749bc;
+  font-weight: 700;
+}
+.runner-equipment h2 {
+  font-size: 33px;
+  line-height: 1.15;
+  font-weight: 750;
+  color: #15263e;
+}
+.operations .condition-choices button {
+  border-color: #b9c7d8;
+  background: #f7f9fd;
+  color: #3f5676;
+}
+.operations .condition-choices button strong {
+  color: #1b304d;
+}
+.operations .condition-choices button.selected {
+  background: #e1f4e8;
+  border-color: #21844e;
+  color: #17613d;
+}
+.operations .condition-choices button.selected.needs-attention {
+  background: #ffe8e4;
+  border-color: #c12b2b;
+  color: #ae2525;
+}
+.operations .condition-choices small {
+  color: #425976;
+}
+.operations .runner-footer .primary {
+  background: #1749e6;
+  color: white;
+  font-size: 16px;
+}
+.job-card {
+  border-color: #bccce3;
+}
+.job-card h3 {
+  color: #172e50;
+  font-size: 20px;
+}
+.job-open-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1749ce;
+  font-weight: 700;
+}
+.job-responsibility {
+  background: #e6eeff;
+  color: #38577e;
+}
+.job-responsibility strong {
+  color: #20489d;
+}
+.job-stages li.current {
+  background: #e6edff;
+  border-color: #1749e6;
+  color: #1749c4;
+}
+.operations .big-action,
+.ops-job-dialog .primary {
+  background: #1749e6;
+  color: white;
+}
+.ops-job-dialog .primary {
+  font-size: 15px;
+  font-weight: 700;
+}
+.ops-report .text-button {
+  color: #3b557d;
+}
+.focus-app .ops-report {
+  border-top: 1px solid #d6e0ef;
+  margin-top: 25px;
+  padding-top: 5px;
+}
+.qr .primary {
+  margin-top: 18px;
+}
+.qr .secondary {
+  color: #344e72;
+}
+@media (max-width: 760px) {
+  .focus-app header {
+    padding: 12px 16px;
+  }
+  .focus-app header > span {
+    display: none;
+  }
+  .focus-app main {
+    padding: 20px 16px 32px;
+  }
+  .storage-status {
+    padding: 12px 16px;
+    font-size: 11px;
+  }
+  .storage-status strong {
+    font-size: 11px;
+  }
+  .storage-status > span {
+    flex-basis: 100%;
+  }
+  .focus-step-strip {
+    gap: 5px;
+    margin-bottom: 16px;
+  }
+  .focus-step-strip button {
+    font-size: 11px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 8px;
+    min-height: 88px;
+    line-height: 1.45;
+  }
+  .journey-stage {
+    padding: 24px 18px;
+  }
+  .journey-stage h2 {
+    font-size: 31px;
+  }
+  .journey-stage-heading p {
+    font-size: 14px;
+  }
+  .journey-form .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .operations .journey-cta .primary,
+  .operations .journey-form > .primary,
+  .operations .journey-stage > .primary {
+    font-size: 15px;
+    min-height: 58px;
+    white-space: normal;
+  }
+  .focus-app .ops-location {
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .focus-app .ops-altitude {
+    font-size: 10px;
+  }
+  .operations .request-specialist-button {
+    float: none;
+    margin-bottom: 15px;
+  }
+  .walk-copy h2 {
+    font-size: 31px;
+  }
+  .runner-equipment h2 {
+    font-size: 27px;
+  }
+  .decision-spotlight {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .sweep-actions .primary {
+    font-size: 15px;
+  }
+  .focus-app .interface-switch {
+    font-size: 11px;
+  }
+  .journey-extras .secondary {
+    width: 100%;
+    margin: 8px 0 0;
+  }
+  .runner-footer .primary {
+    flex: 1;
+  }
+  .job-card h3 {
+    font-size: 18px;
+  }
+}

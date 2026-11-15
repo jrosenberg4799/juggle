@@ -59,44 +59,24 @@ export function RestaurantJourney(p: Props) {
   }
   return (
     <section className="restaurant-journey">
-      <div className="journey-heading">
-        <span>DIRECTOR’S ROADMAP</span>
-        <button className="secondary" onClick={p.onNew}>
-          <Plus size={17} /> Register a new restaurant
-        </button>
-      </div>
-      <ol
-        className="journey-roadmap"
-        aria-label="Restaurant maintenance roadmap"
-      >
-        {names.map((name, i) => (
-          <li key={name}>
-            <button
-              aria-current={step === i ? "step" : undefined}
-              className={step === i ? "current" : completed[i] ? "done" : ""}
-              onClick={() => setStep(i)}
-            >
-              <span>{completed[i] ? <Check size={16} /> : i + 1}</span>
-              <strong>{name}</strong>
-              <small>
-                {i < 3
-                  ? "Director"
-                  : i === 3
-                    ? "Manager"
-                    : i === 4
-                      ? "Manager → Director"
-                      : "Director"}
-                {step === i ? " · YOU ARE HERE" : ""}
-              </small>
-            </button>
-          </li>
+      <div className="focus-step-strip" aria-label="Restaurant setup progress">
+        {names.slice(0, 3).map((name, i) => (
+          <button
+            key={name}
+            aria-current={step === i ? "step" : undefined}
+            className={step === i ? "current" : completed[i] ? "done" : ""}
+            onClick={() => setStep(i)}
+          >
+            <span>{completed[i] ? "✓" : i + 1}</span>
+            {["Register restaurant", "Capture equipment", "Assign Manager"][i]}
+          </button>
         ))}
-      </ol>
+      </div>
       <div className="journey-stage">
         <div className="journey-stage-heading">
           <div>
             <span className="eyebrow">
-              STEP {step + 1} OF 6 ·{" "}
+              {step < 3 ? `STEP ${step + 1} OF 3` : "SETUP COMPLETE"} ·{" "}
               {step < 3
                 ? "DIRECTOR"
                 : step === 3
@@ -108,9 +88,9 @@ export function RestaurantJourney(p: Props) {
             <h2>
               {
                 [
-                  "Start with the restaurant.",
-                  "Walk the rooms. Document what is there.",
-                  "Hand the kitchen to its Manager.",
+                  "Register the restaurant.",
+                  "Capture the equipment.",
+                  "Assign the Manager.",
                   "The Manager checks. The Director sees.",
                   "Need a specialist? Request the work.",
                   "Check the evidence. Close the job.",
@@ -120,8 +100,8 @@ export function RestaurantJourney(p: Props) {
             <p>
               {
                 [
-                  "Enter the details you will reuse. This becomes the restaurant record, linked to its floor plan and QR label.",
-                  "This first sweep builds the equipment record. Add each room, photograph the appliances, and record their make and model.",
+                  "Save the restaurant details. Get its QR label. Then move to equipment.",
+                  "Add an appliance, its photo and make/model. Each one gets a permanent equipment record.",
                   "Name the Manager and choose the first inspection date. Save the next four weekly visits so everyone knows what happens next.",
                   "The Manager opens the assigned restaurant, walks room by room, and reports what needs attention.",
                   "The Manager can request preventive service or a repair. The Director reviews and assigns it; the Subcontractor performs the work.",
@@ -148,8 +128,9 @@ export function RestaurantJourney(p: Props) {
                 registeredAt: property.registeredAt || new Date().toISOString(),
               });
               setStep(1);
+              p.onQR();
               p.notify(
-                "Restaurant registered. Its QR code is ready; next, document the rooms and equipment.",
+                "Restaurant details recorded. Check the save status before opening this QR on another device.",
               );
             }}
           >
@@ -181,6 +162,18 @@ export function RestaurantJourney(p: Props) {
                 />
               </label>
               <label className="field">
+                Contact email
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  defaultValue={property.contactEmail}
+                />
+              </label>
+            </div>
+            <details className="optional-fields">
+              <summary>Add phone number or floor plan (optional)</summary>
+              <label className="field">
                 Contact phone
                 <input
                   name="phone"
@@ -188,48 +181,36 @@ export function RestaurantJourney(p: Props) {
                   defaultValue={property.contactPhone}
                 />
               </label>
-            </div>
-            <label className="field">
-              Contact email
-              <input
-                name="email"
-                type="email"
-                required
-                defaultValue={property.contactEmail}
-              />
-            </label>
-            <label className="field">
-              Floor-plan PDF (optional)
-              <input
-                type="file"
-                accept="application/pdf"
-                disabled={busy}
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  setBusy(true);
-                  try {
-                    patch({ layout: await uploadFile(file) });
-                    p.notify("Floor plan linked to restaurant");
-                  } catch (error) {
-                    p.notify((error as Error).message);
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              />
-            </label>
-            {property.layout && (
-              <p className="journey-confirmation">
-                <Check size={16} /> Floor plan linked
-              </p>
-            )}
+              <label className="field">
+                Floor-plan PDF (optional)
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  disabled={busy}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setBusy(true);
+                    try {
+                      patch({ layout: await uploadFile(file) });
+                      p.notify("Floor plan linked to restaurant");
+                    } catch (error) {
+                      p.notify((error as Error).message);
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                />
+              </label>
+              {property.layout && (
+                <p className="journey-confirmation">
+                  <Check size={16} /> Floor plan linked
+                </p>
+              )}
+            </details>
             <div className="journey-cta">
               <button className="primary big-action" disabled={busy}>
-                Save restaurant & continue <ArrowRight size={20} />
-              </button>
-              <button className="secondary" type="button" onClick={p.onQR}>
-                <QrCode size={18} /> Open restaurant QR
+                Save restaurant & get QR <ArrowRight size={20} />
               </button>
             </div>
           </form>
@@ -245,8 +226,14 @@ export function RestaurantJourney(p: Props) {
               </div>
             )}
             <div className="sweep-actions">
-              <button className="primary big-action" onClick={p.onAsset}>
-                <Plus size={20} /> Photograph & register equipment
+              <button
+                className={assets.length ? "secondary" : "primary big-action"}
+                onClick={p.onAsset}
+              >
+                <Plus size={20} />{" "}
+                {assets.length
+                  ? "Add another appliance"
+                  : "Add the first appliance"}
               </button>
               <button className="secondary" onClick={p.onArea}>
                 <Plus size={18} /> Add a room
@@ -293,25 +280,28 @@ export function RestaurantJourney(p: Props) {
                 <MediaPDF path={property.layout} />
               </details>
             )}
-            <div className="journey-cta">
-              <button
-                className="primary big-action"
-                disabled={!assets.length || !completed[0]}
-                onClick={() => {
-                  patch({ sweepCompletedAt: new Date().toISOString() });
-                  setStep(2);
-                  p.notify(
-                    "First sweep marked complete. Assign the Manager next.",
-                  );
-                }}
-              >
-                Finish first sweep & assign Manager <ArrowRight size={20} />
-              </button>
-              <span>
-                {assets.length} equipment records · Missing details can be
-                completed later.
-              </span>
-            </div>
+            {assets.length > 0 && (
+              <div className="journey-cta">
+                <button
+                  className="primary big-action"
+                  disabled={!completed[0]}
+                  onClick={() => {
+                    patch({ sweepCompletedAt: new Date().toISOString() });
+                    setStep(2);
+                    p.notify(
+                      "First sweep marked complete. Assign the Manager next.",
+                    );
+                  }}
+                >
+                  Finish equipment capture & assign Manager{" "}
+                  <ArrowRight size={20} />
+                </button>
+                <span>
+                  {assets.length} equipment records · Missing details can be
+                  completed later.
+                </span>
+              </div>
+            )}
           </>
         )}
         {step === 2 && (
@@ -446,6 +436,26 @@ export function RestaurantJourney(p: Props) {
           </>
         )}
       </div>
+      <details className="journey-extras">
+        <summary>
+          View restaurant details, change steps or add another restaurant
+        </summary>
+        <button className="secondary" onClick={p.onQR}>
+          Restaurant QR label
+        </button>
+        <button className="secondary" onClick={p.onNew}>
+          Register another restaurant
+        </button>
+        {names.slice(3).map((name, i) => (
+          <button
+            className="secondary"
+            key={name}
+            onClick={() => setStep(i + 3)}
+          >
+            {name}
+          </button>
+        ))}
+      </details>
     </section>
   );
 }

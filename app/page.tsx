@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowUpRight,
+  ArrowRight,
   Building2,
   CalendarDays,
   Check,
@@ -102,7 +103,7 @@ export default function Home() {
           revision.current = remote?.revision || 0;
           setPropertyId((remote?.state || INITIAL_HOME).properties[0].id);
           setCloudReady(true);
-          setSyncStatus("Connected to Supabase");
+          setSyncStatus(remote ? "Saved to Supabase" : "No cloud record yet");
         } else {
           const saved = localStorage.getItem("juggle-demo-v1");
           if (saved) {
@@ -133,6 +134,10 @@ export default function Home() {
   useEffect(() => {
     if (!ready) return;
     if (cloudReady) {
+      if (conflict.current) {
+        setSyncStatus("Not saved — reload required");
+        return;
+      }
       if (initialCloudLoad.current) {
         initialCloudLoad.current = false;
         return;
@@ -250,7 +255,15 @@ export default function Home() {
       </div>
     );
   return (
-    <div className="app">
+    <div
+      className={
+        "app " +
+        (!asset &&
+        ["Overview", "Inspections", "Work orders", "Maintenance"].includes(view)
+          ? "focus-app"
+          : "")
+      }
+    >
       <aside className={mobile ? "sidebar open" : "sidebar"}>
         <a className="brand" href="/">
           juggle<span>®</span>
@@ -357,6 +370,7 @@ export default function Home() {
             aria-label="Toggle menu"
           >
             <Menu />
+            <span>Tools</span>
           </button>
           <span>
             Workspace <ChevronRight size={14} /> <strong>{view}</strong>
@@ -389,19 +403,38 @@ export default function Home() {
             <span className="avatar small">{actor[0]}</span>
           </div>
         </header>
-        <div className="demo-banner">
+        <div
+          className={
+            "demo-banner storage-status " +
+            (!cloudReady
+              ? "local"
+              : syncStatus.startsWith("Not saved")
+                ? "failed"
+                : syncStatus === "Saved to Supabase"
+                  ? "saved"
+                  : "pending")
+          }
+        >
           <span>
             <strong>
-              {cloudReady ? "Connected prototype" : "Interactive demo"}
+              {cloudReady
+                ? syncStatus === "Saved to Supabase"
+                  ? "CLOUD SAVED"
+                  : syncStatus === "No cloud record yet"
+                    ? "SIGNED IN · NOT SAVED YET"
+                    : syncStatus.startsWith("Not saved")
+                      ? "SAVE FAILED"
+                      : "SAVING TO CLOUD"
+                : "LOCAL DEMO · NOT SYNCED"}
             </strong>{" "}
             ·{" "}
             {cloudReady
               ? userEmail + " · " + syncStatus
-              : "Saved on this device only. Sign in to use your kitchen across devices."}{" "}
+              : "Photos and records stay on this device. Sign in to save them online."}{" "}
             Role switching is simulated.
           </span>
           <button onClick={() => setAccount(true)}>
-            {cloudReady ? "Account" : "Sign in / connect"}
+            {cloudReady ? "Account & storage" : "Sign in to save online"}
           </button>
           <button
             onClick={() => {
@@ -1256,6 +1289,17 @@ export default function Home() {
                 <button className="secondary" onClick={() => window.print()}>
                   Print QR label
                 </button>
+                {!asset && role === "Director" && (
+                  <button
+                    className="primary full"
+                    onClick={() => {
+                      setModal(null);
+                      setView("Overview");
+                    }}
+                  >
+                    Next: capture equipment <ArrowRight size={18} />
+                  </button>
+                )}
               </div>
             ) : (
               <form

@@ -62,7 +62,8 @@ export function Operations(p: Props) {
     [walking, setWalking] = useState(false),
     [index, setIndex] = useState(0),
     [report, setReport] = useState(false),
-    [requesting, setRequesting] = useState(false);
+    [requesting, setRequesting] = useState(false),
+    [reviewOpen, setReviewOpen] = useState(false);
   const property =
     data.properties.find((x) => x.id === p.propertyId) || data.properties[0];
   const assets = data.assets.filter(
@@ -371,6 +372,38 @@ export function Operations(p: Props) {
         </>
       ) : role === "Director" ? (
         <>
+          {tasks.some(
+            (t) =>
+              t.date < dateKey() &&
+              ["Issue reported", "Awaiting verification"].includes(t.status),
+          ) && (
+            <div className="decision-spotlight">
+              <strong>
+                !{" "}
+                {
+                  tasks.filter(
+                    (t) =>
+                      t.date < dateKey() &&
+                      ["Issue reported", "Awaiting verification"].includes(
+                        t.status,
+                      ),
+                  ).length
+                }{" "}
+                overdue decisions need you
+              </strong>
+              <button
+                className="secondary"
+                onClick={() => {
+                  setReviewOpen(true);
+                  document
+                    .getElementById("director-decisions")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                Review now →
+              </button>
+            </div>
+          )}
           <RestaurantJourney
             key={property.id}
             property={property}
@@ -383,11 +416,12 @@ export function Operations(p: Props) {
             onOpenAsset={p.onAsset}
             onRole={p.onRole}
             notify={notify}
-            onReview={() =>
+            onReview={() => {
+              setReviewOpen(true);
               document
                 .getElementById("director-decisions")
-                ?.scrollIntoView({ behavior: "smooth" })
-            }
+                ?.scrollIntoView({ behavior: "smooth" });
+            }}
           />
           <details className="panel schedule-details">
             <summary>View the Gantt schedule & plan additional work</summary>
@@ -400,7 +434,21 @@ export function Operations(p: Props) {
               onSelect={openSchedule}
             />
           </details>
-          <section id="director-decisions" className="decision-section">
+          <details
+            id="director-decisions"
+            className="decision-section panel"
+            open={reviewOpen}
+            onToggle={(e) => setReviewOpen(e.currentTarget.open)}
+          >
+            <summary>
+              View Director decisions (
+              {issues.length +
+                waiting.length +
+                pending.length +
+                rounds.filter((r) => r.submittedAt && !r.approvedAt)
+                  .length}{" "}
+              waiting)
+            </summary>
             <div className="ops-section-head">
               <h2>Your decisions</h2>
               <span>Jesse · Director</span>
@@ -483,7 +531,7 @@ export function Operations(p: Props) {
                   </section>
                 ))}
             </div>
-          </section>
+          </details>
         </>
       ) : role === "Manager" ? (
         <>
@@ -930,7 +978,9 @@ function JobCard({
           <strong>{taskOwner(task)}</strong> · Due{" "}
           {new Date(task.date + "T12:00").toLocaleDateString()}
         </span>
-        <ArrowRight size={20} />
+        <span className="job-open-label">
+          Open job <ArrowRight size={20} />
+        </span>
       </div>
     </button>
   );
@@ -1307,7 +1357,7 @@ function JobDialog({
             className="primary full"
             onClick={() => change(task.id, "Assigned")}
           >
-            Assign repair to Subcontractor <ArrowRight size={18} />
+            Assign specialist work to Subcontractor <ArrowRight size={18} />
           </button>
         )}
         {owns && ["Scheduled", "Assigned"].includes(task.status) && (
