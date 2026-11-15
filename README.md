@@ -101,3 +101,7 @@ Without Supabase configuration or without signing in, records remain local and f
 Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the publishable key is supported). Apply the prototype migrations to the selected development project. In Supabase Authentication → URL Configuration, set the Site URL and allow the deployed HTTPS application origin for confirmation redirects. Create an account using the app, confirm the email, then sign in on both devices. Passwords and sessions use Supabase Auth; no service-role key is used or exposed.
 
 The first prototype supports one active editor at a time; changes made on multiple devices should be separated by reloading the record. QR labels must use the final stable production hostname rather than localhost or an ephemeral preview deployment. Photos/PDFs are limited to JPEG, PNG, WebP and PDF, up to 8 MB each. Deleting/resetting records retains uploaded objects for now; no automatic object cleanup is performed.
+
+### First prototype
+
+Open https://juggle-mocha.vercel.app. Choose **Sign in / connect**, create/confirm an account, and register an appliance in **My home kitchen**. Open the appliance's **Asset QR code** and print the label; scan it from a phone and sign in with the same account. Wait for **Saved to Supabase** before switching devices. The signed-out fictional demo is local-only.

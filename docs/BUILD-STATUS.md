@@ -56,3 +56,9 @@ In Supabase Authentication → URL Configuration, set the Site URL and allowed r
 ## Verification limits
 
 Production compilation and TypeScript checks pass. Supabase migrations applied successfully and security advisor reported no findings. Schema constraints and private bucket configuration are checked separately. Browser, physical printer, phone-camera scan, account email-delivery and a full live upload walkthrough require hands-on verification; these are not claimed as tested.
+
+## Live prototype
+
+Stable production URL: https://juggle-mocha.vercel.app
+
+Verified HTTP 200 on the production page and expected HTTP 503 on the deliberately disabled live-research endpoint. Anonymous Supabase REST reads returned no workspace rows; anonymous object listings exposed no media. Calendar serialization checked all three requested reminder alarms. The print, phone scan, confirmation-email and authenticated-upload walkthrough still needs the owner's hands-on test.

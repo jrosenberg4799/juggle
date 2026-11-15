@@ -83,6 +83,7 @@ export default function Home() {
   const revision = useRef(0);
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const conflict = useRef(false);
+  const initialCloudLoad = useRef(true);
   useEffect(() => {
     let active = true;
     async function boot() {
@@ -129,6 +130,10 @@ export default function Home() {
   useEffect(() => {
     if (!ready) return;
     if (cloudReady) {
+      if (initialCloudLoad.current) {
+        initialCloudLoad.current = false;
+        return;
+      }
       setSyncStatus("Saving…");
       const timer = setTimeout(() => {
         saveQueue.current = saveQueue.current.then(async () => {
