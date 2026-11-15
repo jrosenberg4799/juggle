@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { ActionBar, Panel } from "./workspace-ui";
 import {
   ArrowRight,
   Check,
@@ -72,7 +73,7 @@ export function RestaurantJourney(p: Props) {
           </button>
         ))}
       </div>
-      <div className="journey-stage">
+      <Panel as="div" className="journey-stage">
         <div className="journey-stage-heading">
           <div>
             <span className="eyebrow">
@@ -208,11 +209,11 @@ export function RestaurantJourney(p: Props) {
                 </p>
               )}
             </details>
-            <div className="journey-cta">
+            <ActionBar backDisabled>
               <button className="primary big-action" disabled={busy}>
                 Save restaurant & get QR <ArrowRight size={20} />
               </button>
-            </div>
+            </ActionBar>
           </form>
         )}
         {step === 1 && (
@@ -226,15 +227,13 @@ export function RestaurantJourney(p: Props) {
               </div>
             )}
             <div className="sweep-actions">
-              <button
-                className={assets.length ? "secondary" : "primary big-action"}
-                onClick={p.onAsset}
-              >
-                <Plus size={20} />{" "}
-                {assets.length
-                  ? "Add another appliance"
-                  : "Add the first appliance"}
-              </button>
+              {assets.length > 0 && (
+                <button className="secondary" onClick={p.onAsset}>
+                  <Plus size={20} />
+                  Add another appliance
+                </button>
+              )}
+
               <button className="secondary" onClick={p.onArea}>
                 <Plus size={18} /> Add a room
               </button>
@@ -280,28 +279,31 @@ export function RestaurantJourney(p: Props) {
                 <MediaPDF path={property.layout} />
               </details>
             )}
-            {assets.length > 0 && (
-              <div className="journey-cta">
-                <button
-                  className="primary big-action"
-                  disabled={!completed[0]}
-                  onClick={() => {
-                    patch({ sweepCompletedAt: new Date().toISOString() });
-                    setStep(2);
-                    p.notify(
-                      "First sweep marked complete. Assign the Manager next.",
-                    );
-                  }}
-                >
-                  Finish equipment capture & assign Manager{" "}
-                  <ArrowRight size={20} />
-                </button>
-                <span>
-                  {assets.length} equipment records · Missing details can be
-                  completed later.
-                </span>
-              </div>
-            )}
+            <p className="action-context">
+              {assets.length} equipment records · Add what you can document now.
+            </p>
+            <ActionBar onBack={() => setStep(0)}>
+              <button
+                className="primary big-action"
+                disabled={!completed[0]}
+                onClick={() => {
+                  if (!assets.length) {
+                    p.onAsset();
+                    return;
+                  }
+                  patch({ sweepCompletedAt: new Date().toISOString() });
+                  setStep(2);
+                  p.notify(
+                    "Equipment capture finished. Assign the Manager next.",
+                  );
+                }}
+              >
+                {assets.length
+                  ? "Finish capture & assign Manager"
+                  : "Add the first appliance"}
+                <ArrowRight size={20} />
+              </button>
+            </ActionBar>
           </>
         )}
         {step === 2 && (
@@ -362,9 +364,11 @@ export function RestaurantJourney(p: Props) {
                 This creates four weekly visit dates. Extend the schedule here
                 when needed; continuous recurrence is not automated.
               </p>
-              <button className="primary big-action" disabled={!completed[1]}>
-                Assign Manager & save weekly dates <ArrowRight size={20} />
-              </button>
+              <ActionBar onBack={() => setStep(1)}>
+                <button className="primary big-action" disabled={!completed[1]}>
+                  Assign Manager & save weekly dates <ArrowRight size={20} />
+                </button>
+              </ActionBar>
             </form>
           </>
         )}
@@ -386,12 +390,15 @@ export function RestaurantJourney(p: Props) {
                 </p>
               </div>
             </div>
-            <button
-              className="primary big-action"
-              onClick={() => p.onRole("Manager")}
-            >
-              Open Manager walkthrough <ArrowRight size={20} />
-            </button>
+            <ActionBar onBack={() => setStep(2)}>
+              {" "}
+              <button
+                className="primary big-action"
+                onClick={() => p.onRole("Manager")}
+              >
+                Open Manager walkthrough <ArrowRight size={20} />
+              </button>
+            </ActionBar>
             <p className="muted">
               Prototype preview: switches the active interface. Findings remain
               visible to the Director.
@@ -407,12 +414,15 @@ export function RestaurantJourney(p: Props) {
               <ArrowRight size={18} />
               <span>Subcontractor works</span>
             </div>
-            <button
-              className="primary big-action"
-              onClick={() => p.onRole("Manager")}
-            >
-              Open Manager’s request tools <ArrowRight size={20} />
-            </button>
+            <ActionBar onBack={() => setStep(3)}>
+              {" "}
+              <button
+                className="primary big-action"
+                onClick={() => p.onRole("Manager")}
+              >
+                Open Manager’s request tools <ArrowRight size={20} />
+              </button>
+            </ActionBar>
             <button
               className="secondary"
               onClick={() => p.onRole("Subcontractor")}
@@ -430,12 +440,15 @@ export function RestaurantJourney(p: Props) {
               <ArrowRight size={18} />
               <span>History saved</span>
             </div>
-            <button className="primary big-action" onClick={p.onReview}>
-              Open jobs waiting for my decision <ArrowRight size={20} />
-            </button>
+            <ActionBar onBack={() => setStep(4)}>
+              {" "}
+              <button className="primary big-action" onClick={p.onReview}>
+                Open jobs waiting for my decision <ArrowRight size={20} />
+              </button>
+            </ActionBar>
           </>
         )}
-      </div>
+      </Panel>
       <details className="journey-extras">
         <summary>
           View restaurant details, change steps or add another restaurant

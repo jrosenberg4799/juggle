@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { ActionBar, Panel, DialogLayer } from "./workspace-ui";
 import type { Dispatch, SetStateAction } from "react";
 import {
   ArrowRight,
@@ -651,16 +652,18 @@ export function Operations(p: Props) {
                     <span>{assets.length} appliances</span>
                     <span>{managerName} · Manager</span>
                   </div>
-                  <button
-                    className="primary big-action"
-                    onClick={startWalk}
-                    disabled={!assets.length}
-                  >
-                    {draft
-                      ? "Continue walkthrough"
-                      : "Start weekly walkthrough"}
-                    <ArrowRight size={20} />
-                  </button>
+                  <ActionBar backDisabled>
+                    <button
+                      className="primary big-action"
+                      onClick={startWalk}
+                      disabled={!assets.length}
+                    >
+                      {draft
+                        ? "Continue walkthrough"
+                        : "Start weekly walkthrough"}
+                      <ArrowRight size={20} />
+                    </button>
+                  </ActionBar>
                   {draft && (
                     <p className="muted">
                       {
@@ -1075,7 +1078,7 @@ function WalkthroughRunner({
     (id) => round.answers[id]?.result,
   ).length;
   return (
-    <section className="inspection-runner">
+    <Panel className="inspection-runner">
       <div className="runner-top">
         <span>
           WEEKLY WALKTHROUGH · {round.managerName || "Alex"} / MANAGER
@@ -1105,12 +1108,11 @@ function WalkthroughRunner({
             automatically order repairs.
           </p>
           <RoundReport round={round} data={data} />
-          <button className="primary big-action" onClick={onSubmit}>
-            Send walkthrough to Director <ArrowRight size={20} />
-          </button>
-          <button className="secondary" onClick={() => setReview(false)}>
-            Back to checks
-          </button>
+          <ActionBar onBack={() => setReview(false)}>
+            <button className="primary big-action" onClick={onSubmit}>
+              Send walkthrough to Director <ArrowRight size={20} />
+            </button>
+          </ActionBar>
         </div>
       ) : (
         <>
@@ -1221,14 +1223,11 @@ function WalkthroughRunner({
             />{" "}
             I completed the simple care already approved for this appliance
           </label>
-          <div className="runner-footer">
-            <button
-              className="secondary"
-              disabled={index === 0 || uploading}
-              onClick={() => setIndex(index - 1)}
-            >
-              <ArrowLeft size={19} /> Previous
-            </button>
+          <ActionBar
+            onBack={() => (index === 0 ? onClose() : setIndex(index - 1))}
+            backDisabled={uploading}
+          >
+            {" "}
             <button
               className="primary big-action"
               disabled={!valid || uploading}
@@ -1245,10 +1244,10 @@ function WalkthroughRunner({
                   : "Save & next appliance"}
               <ArrowRight size={20} />
             </button>
-          </div>
+          </ActionBar>
         </>
       )}
-    </section>
+    </Panel>
   );
 }
 function JobDialog({
@@ -1275,37 +1274,42 @@ function JobDialog({
   const [busy, setBusy] = useState(false);
   const owns = taskOwner(task) === role;
   return (
-    <div className="modal-backdrop">
-      <section
-        className="modal ops-job-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Job details"
-      >
-        <div className="panel-title">
-          <span className="badge">
-            {taskKind(task)} · {stage(task)}
-          </span>
-          <button
-            className="icon-button"
-            onClick={onClose}
-            aria-label="Close job"
-          >
-            <X />
-          </button>
-        </div>
-        <h2>{task.title}</h2>
-        <p>
-          {asset?.area} · {asset?.name}
-        </p>
-        <div className="job-responsibility">
-          <strong>DOING THE WORK: {taskOwner(task)}</strong>
-          <span>REVIEWING THE RESULT: Director</span>
-          <span>Due: {task.date}</span>
-        </div>
-        <ol className="job-stages">
-          {["Assigned", "In progress", "Awaiting verification", "Verified"].map(
-            (s, i) => (
+    <DialogLayer onClose={onClose}>
+      <div className="modal-backdrop">
+        <section
+          className="modal shared-panel ops-job-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Job details"
+        >
+          <div className="panel-title">
+            <span className="badge">
+              {taskKind(task)} · {stage(task)}
+            </span>
+            <button
+              className="icon-button"
+              onClick={onClose}
+              aria-label="Close job"
+            >
+              <X />
+            </button>
+          </div>
+          <h2>{task.title}</h2>
+          <p>
+            {asset?.area} · {asset?.name}
+          </p>
+          <div className="job-responsibility">
+            <strong>DOING THE WORK: {taskOwner(task)}</strong>
+            <span>REVIEWING THE RESULT: Director</span>
+            <span>Due: {task.date}</span>
+          </div>
+          <ol className="job-stages">
+            {[
+              "Assigned",
+              "In progress",
+              "Awaiting verification",
+              "Verified",
+            ].map((s, i) => (
               <li className={task.status === s ? "current" : ""} key={s}>
                 {i + 1}.{" "}
                 {s === "Assigned"
@@ -1316,194 +1320,208 @@ function JobDialog({
                       ? "Director review"
                       : "Complete"}
               </li>
-            ),
+            ))}
+          </ol>
+          {task.notes && (
+            <div className="notice">
+              <strong>Instructions / reported finding</strong>
+              <p>{task.notes}</p>
+            </div>
           )}
-        </ol>
-        {task.notes && (
-          <div className="notice">
-            <strong>Instructions / reported finding</strong>
-            <p>{task.notes}</p>
-          </div>
-        )}
-        {task.returnReason && (
-          <div className="notice">
-            <strong>Correction requested</strong>
-            <p>{task.returnReason}</p>
-          </div>
-        )}
-        {task.repair && (
-          <p>
-            <strong>Work recorded:</strong> {task.repair}
-          </p>
-        )}
-        {task.evidence && (
-          <p>
-            <MediaLink path={task.evidence}>View evidence photograph</MediaLink>
-          </p>
-        )}
-        {task.invoice && (
-          <p>
-            <MediaLink path={task.invoice}>View invoice</MediaLink>
-          </p>
-        )}
-        <button className="secondary" onClick={onAsset}>
-          Equipment details & full history
-        </button>
-        <button className="secondary" onClick={onCalendar}>
-          Export calendar event
-        </button>
-        {role === "Director" && task.status === "Issue reported" && (
-          <button
-            className="primary full"
-            onClick={() => change(task.id, "Assigned")}
-          >
-            Assign specialist work to Subcontractor <ArrowRight size={18} />
+          {task.returnReason && (
+            <div className="notice">
+              <strong>Correction requested</strong>
+              <p>{task.returnReason}</p>
+            </div>
+          )}
+          {task.repair && (
+            <p>
+              <strong>Work recorded:</strong> {task.repair}
+            </p>
+          )}
+          {task.evidence && (
+            <p>
+              <MediaLink path={task.evidence}>
+                View evidence photograph
+              </MediaLink>
+            </p>
+          )}
+          {task.invoice && (
+            <p>
+              <MediaLink path={task.invoice}>View invoice</MediaLink>
+            </p>
+          )}
+          <button className="secondary" onClick={onAsset}>
+            Equipment details & full history
           </button>
-        )}
-        {owns && ["Scheduled", "Assigned"].includes(task.status) && (
-          <button
-            className="primary full big-action"
-            onClick={() => change(task.id, "In progress")}
-          >
-            Start{" "}
-            {taskKind(task) === "Preventive care" ? "preventive care" : "work"}{" "}
-            <ArrowRight size={20} />
+          <button className="secondary" onClick={onCalendar}>
+            Export calendar event
           </button>
-        )}
-        {owns && task.status === "In progress" && (
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const f = new FormData(e.currentTarget);
-              setBusy(true);
-              try {
-                const photo = f.get("photo") as File,
-                  invoice = f.get("invoice") as File;
-                change(task.id, "Awaiting verification", {
-                  repair: String(f.get("notes")),
-                  evidence: photo?.size
-                    ? await uploadFile(photo)
-                    : task.evidence,
-                  invoice: invoice?.size
-                    ? await uploadFile(invoice)
-                    : task.invoice,
-                  returnReason: "",
-                });
-              } catch (error) {
-                notify((error as Error).message);
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            <label className="field">
-              What did you do?
-              <textarea
-                name="notes"
-                required
-                placeholder="Describe the work and the result."
-              />
-            </label>
-            <label className="field">
-              Photo of completed work{" "}
-              {role === "Subcontractor" ? "(required)" : "(optional)"}
-              <input
-                type="file"
-                name="photo"
-                accept="image/jpeg,image/png,image/webp"
-                required={role === "Subcontractor"}
-                capture="environment"
-              />
-            </label>
-            <label className="field">
-              Invoice (optional)
-              <input
-                name="invoice"
-                type="file"
-                accept="application/pdf,image/jpeg,image/png,image/webp"
-              />
-            </label>
-            <button className="primary full big-action" disabled={busy}>
-              {busy ? "Uploading…" : "Send to Director for review"}
-            </button>
-          </form>
-        )}
-        {role === "Director" && task.status === "Awaiting verification" && (
-          <>
-            <button
-              className="primary full big-action"
-              onClick={() => change(task.id, "Verified")}
-            >
-              Approve completed work <Check size={19} />
-            </button>
+          {role === "Director" && task.status === "Issue reported" && (
+            <ActionBar backLabel="Close" onBack={onClose} backDisabled={busy}>
+              <button
+                className="primary full"
+                onClick={() => change(task.id, "Assigned")}
+              >
+                Assign specialist work to Subcontractor <ArrowRight size={18} />
+              </button>
+            </ActionBar>
+          )}
+          {owns && ["Scheduled", "Assigned"].includes(task.status) && (
+            <ActionBar backLabel="Close" onBack={onClose} backDisabled={busy}>
+              <button
+                className="primary full big-action"
+                onClick={() => change(task.id, "In progress")}
+              >
+                Start{" "}
+                {taskKind(task) === "Preventive care"
+                  ? "preventive care"
+                  : "work"}{" "}
+                <ArrowRight size={20} />
+              </button>
+            </ActionBar>
+          )}
+          {owns && task.status === "In progress" && (
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 const f = new FormData(e.currentTarget);
-                change(task.id, "Assigned", {
-                  returnReason: String(f.get("reason")),
-                });
+                setBusy(true);
+                try {
+                  const photo = f.get("photo") as File,
+                    invoice = f.get("invoice") as File;
+                  change(task.id, "Awaiting verification", {
+                    repair: String(f.get("notes")),
+                    evidence: photo?.size
+                      ? await uploadFile(photo)
+                      : task.evidence,
+                    invoice: invoice?.size
+                      ? await uploadFile(invoice)
+                      : task.invoice,
+                    returnReason: "",
+                  });
+                } catch (error) {
+                  notify((error as Error).message);
+                } finally {
+                  setBusy(false);
+                }
               }}
             >
               <label className="field">
-                Need a correction?
-                <input
-                  name="reason"
+                What did you do?
+                <textarea
+                  name="notes"
                   required
-                  placeholder="Explain what must be corrected."
+                  placeholder="Describe the work and the result."
                 />
               </label>
-              <button className="secondary full">Return for correction</button>
+              <label className="field">
+                Photo of completed work{" "}
+                {role === "Subcontractor" ? "(required)" : "(optional)"}
+                <input
+                  type="file"
+                  name="photo"
+                  accept="image/jpeg,image/png,image/webp"
+                  required={role === "Subcontractor"}
+                  capture="environment"
+                />
+              </label>
+              <label className="field">
+                Invoice (optional)
+                <input
+                  name="invoice"
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,image/webp"
+                />
+              </label>
+              <ActionBar backLabel="Close" onBack={onClose} backDisabled={busy}>
+                <button className="primary full big-action" disabled={busy}>
+                  {busy ? "Uploading…" : "Send to Director for review"}
+                </button>
+              </ActionBar>
             </form>
-          </>
-        )}
-        {task.status === "Awaiting verification" && role !== "Director" && (
-          <div className="notice">
-            Sent. The Director will review your work.
-          </div>
-        )}
-        {role === "Director" && task.status !== "Verified" && (
-          <details className="reschedule">
-            <summary>Change planned dates</summary>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const f = new FormData(e.currentTarget),
-                  start = String(f.get("start")),
-                  end = String(f.get("end"));
-                if (start > end) {
-                  notify("Finish date must be on or after the start.");
-                  return;
-                }
-                reschedule(start, end);
-              }}
-            >
-              <div className="form-row">
+          )}
+          {role === "Director" && task.status === "Awaiting verification" && (
+            <>
+              <ActionBar backLabel="Close" onBack={onClose}>
+                <button
+                  className="primary full big-action"
+                  onClick={() => change(task.id, "Verified")}
+                >
+                  Approve completed work <Check size={19} />
+                </button>
+              </ActionBar>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const f = new FormData(e.currentTarget);
+                  change(task.id, "Assigned", {
+                    returnReason: String(f.get("reason")),
+                  });
+                }}
+              >
                 <label className="field">
-                  Start
+                  Need a correction?
                   <input
-                    name="start"
-                    type="date"
+                    name="reason"
                     required
-                    defaultValue={task.startDate || task.date}
+                    placeholder="Explain what must be corrected."
                   />
                 </label>
-                <label className="field">
-                  Finish
-                  <input
-                    name="end"
-                    type="date"
-                    required
-                    defaultValue={task.date}
-                  />
-                </label>
-              </div>
-              <button className="secondary">Save planned dates</button>
-            </form>
-          </details>
-        )}
-      </section>
-    </div>
+                <button className="secondary full">
+                  Return for correction
+                </button>
+              </form>
+            </>
+          )}
+          {task.status === "Awaiting verification" && role !== "Director" && (
+            <div className="notice">
+              Sent. The Director will review your work.
+            </div>
+          )}
+          {role === "Director" && task.status !== "Verified" && (
+            <details className="reschedule">
+              <summary>Change planned dates</summary>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const f = new FormData(e.currentTarget),
+                    start = String(f.get("start")),
+                    end = String(f.get("end"));
+                  if (start > end) {
+                    notify("Finish date must be on or after the start.");
+                    return;
+                  }
+                  reschedule(start, end);
+                }}
+              >
+                <div className="form-row">
+                  <label className="field">
+                    Start
+                    <input
+                      name="start"
+                      type="date"
+                      required
+                      defaultValue={task.startDate || task.date}
+                    />
+                  </label>
+                  <label className="field">
+                    Finish
+                    <input
+                      name="end"
+                      type="date"
+                      required
+                      defaultValue={task.date}
+                    />
+                  </label>
+                </div>
+                <button className="secondary">Save planned dates</button>
+              </form>
+            </details>
+          )}
+        </section>
+      </div>
+    </DialogLayer>
   );
 }
 function SpecialistRequest({
@@ -1585,9 +1603,11 @@ function SpecialistRequest({
           What did you notice / what service is needed?
           <textarea name="notes" required />
         </label>
-        <button className="primary big-action" disabled={!assets.length}>
-          Send request to Director <ArrowRight size={20} />
-        </button>
+        <ActionBar backLabel="Cancel" onBack={onClose}>
+          <button className="primary big-action" disabled={!assets.length}>
+            Send request to Director <ArrowRight size={20} />
+          </button>
+        </ActionBar>
         {!assets.length && (
           <p>
             Equipment must be registered and approved before requesting work.

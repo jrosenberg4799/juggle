@@ -1,5 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import {
+  WorkspaceViewport,
+  WorkspaceHeader,
+  SaveStatus,
+  PageTitle,
+  Panel,
+  ActionBar,
+  PageLoading,
+} from "@/components/workspace-ui";
 import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowUpRight,
@@ -92,6 +101,7 @@ export default function Home() {
   const [cloudReceipt, setCloudReceipt] = useState<CloudReceipt | null>(null);
   const [cloudLoadError, setCloudLoadError] = useState("");
   const saveGeneration = useRef(0);
+  const [childDialogs, setChildDialogs] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const revision = useRef(0);
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
@@ -193,6 +203,37 @@ export default function Home() {
       return () => clearTimeout(t);
     }
   }, [toast]);
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setModal(null);
+        setAccount(false);
+        setMobile(false);
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, []);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [view, selected, role]);
+  const overlayOpen = Boolean(modal || account || mobile || childDialogs > 0);
+  useEffect(() => {
+    if (!overlayOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [overlayOpen]);
+  useEffect(() => {
+    const dialog = (event: globalThis.Event) =>
+      setChildDialogs((n) =>
+        Math.max(0, n + (event as CustomEvent<number>).detail),
+      );
+    window.addEventListener("juggle:dialog", dialog);
+    return () => window.removeEventListener("juggle:dialog", dialog);
+  }, []);
   const actor =
     role === "Director"
       ? "Jesse · Director"
@@ -270,49 +311,23 @@ export default function Home() {
         .includes(search.toLowerCase()),
     );
   const openTasks = data.tasks.filter((t) => t.status !== "Verified");
-  if (cloudLoadError)
-    return (
-      <div className="cloud-error-screen">
-        <section className="panel">
-          <h1>We couldn’t open your cloud kitchen.</h1>
-          <p>{cloudLoadError}</p>
-          <p>
-            We have not switched you into a local demo. Retry before entering
-            real kitchen records.
-          </p>
-          <button className="primary" onClick={() => location.reload()}>
-            Retry cloud connection
-          </button>
-          <button
-            className="secondary"
-            onClick={async () => {
-              await supabase?.auth.signOut();
-              location.reload();
-            }}
-          >
-            Sign out
-          </button>
-        </section>
-      </div>
-    );
-  if (!ready)
-    return (
-      <div className="loading-screen">
-        <strong>juggle®</strong>
-        <p>Opening your workspace…</p>
-      </div>
-    );
   return (
-    <div
-      className={
-        "app " +
-        (!asset &&
-        ["Overview", "Inspections", "Work orders", "Maintenance"].includes(view)
-          ? "focus-app"
-          : "")
-      }
-    >
-      <aside className={mobile ? "sidebar open" : "sidebar"}>
+    <div className="app unified-app">
+      <WorkspaceViewport />
+      {mobile && (
+        <button
+          className="tools-scrim"
+          type="button"
+          aria-label="Close workspace tools"
+          onClick={() => setMobile(false)}
+        />
+      )}
+      <aside
+        id="workspace-tools"
+        inert={!mobile}
+        aria-hidden={!mobile}
+        className={mobile ? "sidebar open" : "sidebar"}
+      >
         <a className="brand" href="/">
           juggle<span>®</span>
         </a>
@@ -387,753 +402,727 @@ export default function Home() {
             <span className="avatar">{actor[0]}</span>
             <div>
               <strong>{actor.split(" · ")[0]}</strong>
-              <select
-                aria-label="Demo role"
-                value={role}
-                onChange={(e) => {
-                  setRole(e.target.value as Role);
-                  setSelected(null);
-                  setView(
-                    e.target.value === "Manager"
-                      ? "Inspections"
-                      : e.target.value === "Subcontractor"
-                        ? "Work orders"
-                        : "Overview",
-                  );
-                }}
-              >
-                <option>Director</option>
-                <option>Manager</option>
-                <option>Subcontractor</option>
-              </select>
+              <span className="profile-role">{role}</span>
             </div>
           </div>
         </div>
       </aside>
-      <div className="main">
-        <header>
-          <button
-            className="menu icon-button"
-            onClick={() => setMobile(!mobile)}
-            aria-label="Toggle menu"
-          >
-            <Menu />
-            <span>Tools</span>
-          </button>
-          <span>
-            Workspace <ChevronRight size={14} /> <strong>{view}</strong>
-          </span>
-          <div className="header-right">
-            <label className="interface-switch">
-              Interface
-              <select
-                aria-label="Change interface"
-                value={role}
-                onChange={(e) => {
-                  const next = e.target.value as Role;
-                  setRole(next);
-                  setSelected(null);
-                  setModal(null);
-                  setView(
-                    next === "Director"
-                      ? "Overview"
-                      : next === "Manager"
-                        ? "Inspections"
-                        : "Work orders",
-                  );
-                }}
-              >
-                <option>Director</option>
-                <option>Manager</option>
-                <option>Subcontractor</option>
-              </select>
-            </label>
-            <span className="avatar small">{actor[0]}</span>
-          </div>
-        </header>
-        <div
-          className={
-            "demo-banner storage-status " +
-            (!cloudReady
-              ? "local"
-              : syncStatus.startsWith("Not saved")
-                ? "failed"
-                : syncStatus === "Saved to Supabase"
-                  ? "saved"
-                  : "pending")
+      <div className="main" inert={overlayOpen}>
+        <WorkspaceHeader
+          role={role}
+          disabled={!ready}
+          toolsOpen={mobile}
+          onTools={() => setMobile(!mobile)}
+          onHome={() =>
+            go(
+              role === "Director"
+                ? "Overview"
+                : role === "Manager"
+                  ? "Inspections"
+                  : "Work orders",
+            )
           }
-        >
-          <span>
-            <strong>
-              {cloudReady
-                ? syncStatus === "Saved to Supabase"
-                  ? "CLOUD SAVED"
-                  : syncStatus === "No cloud record yet"
-                    ? "SIGNED IN · NOT SAVED YET"
-                    : syncStatus.startsWith("Not saved")
-                      ? "SAVE FAILED"
-                      : "SAVING TO CLOUD"
-                : "LOCAL DEMO · NOT SYNCED"}
-            </strong>{" "}
-            ·{" "}
-            {cloudReady
-              ? userEmail + " · " + syncStatus
-              : "Photos and records stay on this device. Sign in to save them online."}{" "}
-            Role switching is simulated.
-            {cloudReady && cloudReceipt && (
-              <span className="cloud-receipt">
-                Read back from Supabase · revision {cloudReceipt.revision} ·{" "}
-                {cloudReceipt.equipment} appliances · {cloudReceipt.files} file
-                references ·{" "}
-                {new Date(cloudReceipt.savedAt).toLocaleTimeString()}
-              </span>
-            )}
-          </span>
-          <button onClick={() => setAccount(true)}>
-            {cloudReady ? "Account & storage" : "Sign in to save online"}
-          </button>
-          <button
-            onClick={() => {
-              if (
-                confirm(
-                  "Reset all workspace records? Uploaded objects are retained in storage.",
-                )
-              ) {
-                setData(cloudReady ? INITIAL_HOME : seed);
-                setSelected(null);
-                setToast("Workspace reset");
-              }
-            }}
-          >
-            {cloudReady ? "Reset workspace" : "Reload sample kitchen"}
-          </button>
-        </div>
+          onRole={(next) => {
+            setRole(next);
+            setSelected(null);
+            setModal(null);
+            setMobile(false);
+            setView(
+              next === "Director"
+                ? "Overview"
+                : next === "Manager"
+                  ? "Inspections"
+                  : "Work orders",
+            );
+          }}
+        />
+        <SaveStatus
+          ready={ready}
+          cloud={cloudReady}
+          status={syncStatus}
+          receipt={cloudReceipt}
+          onAccount={() => setAccount(true)}
+          onReset={() => {
+            if (
+              confirm(
+                "Reset all workspace records? Uploaded files are retained in storage.",
+              )
+            ) {
+              setData(cloudReady ? INITIAL_HOME : seed);
+              setSelected(null);
+              setAccount(false);
+              setToast("Workspace reset");
+            }
+          }}
+        />
         <main>
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow">
-                {role === "Director"
-                  ? "DIRECTOR · RESTAURANT OVERSIGHT"
+          <PageTitle
+            eyebrow={
+              role +
+              " · " +
+              (asset
+                ? "Equipment record"
+                : view === "Overview"
+                  ? "Restaurant setup"
+                  : view === "Inspections"
+                    ? "Inspection"
+                    : view === "Work orders"
+                      ? "Assigned work"
+                      : "Workspace")
+            }
+            title={
+              asset?.name ||
+              (
+                {
+                  Overview: "Restaurant setup",
+                  Properties: "Restaurants & rooms",
+                  "Asset register": "Equipment",
+                  Maintenance: "Work schedule",
+                  Inspections: "Weekly walkthrough",
+                  "Work orders": "Assigned jobs",
+                } as Record<string, string>
+              )[view]
+            }
+            subtitle={
+              asset
+                ? `${asset.area} · ${data.properties.find((p) => p.id === asset.propertyId)?.name}`
+                : role === "Director"
+                  ? "Set up, plan and review."
                   : role === "Manager"
-                    ? "MANAGER · ROOMS & EQUIPMENT"
-                    : "SUBCONTRACTOR · ASSIGNED WORK"}
-              </div>
-              <h1>
-                {asset
-                  ? asset.name
-                  : view === "Overview"
-                    ? "What is the next action?"
-                    : (
-                        {
-                          Inspections: "Check the kitchen.",
-                          "Work orders": "Your jobs. Clear and ready.",
-                          Maintenance: "Who’s doing what, and when.",
-                          Properties: "Restaurants & rooms",
-                          "Asset register": "Equipment",
-                        } as Record<string, string>
-                      )[view] || view}
-              </h1>
+                    ? "Check one appliance at a time."
+                    : "Complete the assigned work and record the result."
+            }
+            action={
+              admin &&
+              view !== "Overview" && (
+                <button
+                  className="primary"
+                  onClick={() =>
+                    setModal(
+                      view === "Properties"
+                        ? "property"
+                        : view === "Maintenance"
+                          ? "schedule"
+                          : "asset",
+                    )
+                  }
+                >
+                  <Plus size={17} />
+                  {view === "Properties"
+                    ? "Add property"
+                    : view === "Maintenance"
+                      ? "Schedule work"
+                      : "Register asset"}
+                </button>
+              )
+            }
+          />
+          {!ready ? (
+            <PageLoading />
+          ) : cloudLoadError ? (
+            <Panel className="page-failure">
+              <h2>We couldn’t open your cloud kitchen.</h2>
+              <p>{cloudLoadError}</p>
               <p>
-                {asset
-                  ? `${asset.area} / ${data.properties.find((p) => p.id === asset.propertyId)?.name}`
-                  : view === "Overview"
-                    ? "Follow the restaurant roadmap. One clear step at a time."
-                    : role === "Manager"
-                      ? "One room at a time. Check it, record it, move on."
-                      : role === "Subcontractor"
-                        ? "Start your assigned work. Add proof. Send it for review."
-                        : "Every job has an owner, a date and a next step."}
+                No local demo has replaced your cloud workspace. Retry before
+                entering records.
               </p>
-            </div>
-            {admin && view !== "Overview" && (
-              <button
-                className="primary"
-                onClick={() =>
-                  setModal(
-                    view === "Properties"
-                      ? "property"
-                      : view === "Maintenance"
-                        ? "schedule"
-                        : "asset",
-                  )
-                }
-              >
-                <Plus size={17} />
-                {view === "Properties"
-                  ? "Add property"
-                  : view === "Maintenance"
-                    ? "Schedule work"
-                    : "Register asset"}
-              </button>
-            )}
-          </div>
-          {selected && !asset && ready && (
-            <div className="notice">
-              This QR record is not in the current workspace. Sign in with the
-              account that registered the equipment.
-            </div>
-          )}
-          {asset ? (
-            <>
-              <button
-                className="back"
-                onClick={() => {
-                  setSelected(null);
-                  setView(
-                    role === "Director"
-                      ? "Overview"
-                      : role === "Manager"
-                        ? "Inspections"
-                        : "Work orders",
-                  );
+              <ActionBar
+                backLabel="Sign out"
+                onBack={async () => {
+                  await supabase?.auth.signOut();
+                  location.reload();
                 }}
               >
-                <ArrowLeft size={16} /> Back to{" "}
-                {role === "Director"
-                  ? "restaurant roadmap"
-                  : role === "Manager"
-                    ? "walkthrough"
-                    : "assigned jobs"}
-              </button>
-              {asset.pendingApproval && (
+                <button className="primary" onClick={() => location.reload()}>
+                  Retry cloud connection
+                </button>
+              </ActionBar>
+            </Panel>
+          ) : (
+            <>
+              {selected && !asset && ready && (
                 <div className="notice">
-                  New equipment submitted by the Manager. The Director must
-                  approve it before it joins the weekly walkthrough.
+                  This QR record is not in the current workspace. Sign in with
+                  the account that registered the equipment.
                 </div>
               )}
-              <div className="asset-top">
-                <div className="asset-image">
-                  {asset.photo ? (
-                    <MediaImage path={asset.photo} alt={asset.name} />
-                  ) : (
-                    <Wrench size={52} />
-                  )}
-                </div>
-                <div>
-                  <span
-                    className={
-                      "badge " +
-                      (asset.condition === "Good" ? "green" : "amber")
-                    }
+              {asset ? (
+                <>
+                  <button
+                    className="back"
+                    onClick={() => {
+                      setSelected(null);
+                      setView(
+                        role === "Director"
+                          ? "Overview"
+                          : role === "Manager"
+                            ? "Inspections"
+                            : "Work orders",
+                      );
+                    }}
                   >
-                    {asset.condition}
-                  </span>
-                  <h2>{asset.name}</h2>
-                  <p>
-                    {asset.make} · {asset.model}
-                  </p>
-                  <p className="muted">Asset ID · {asset.id.slice(0, 12)}</p>
-                  {admin && (
-                    <label className="secondary">
-                      Update equipment photo
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        capture="environment"
-                        hidden
-                        onChange={async (e) => {
-                          const f = e.target.files?.[0];
-                          if (!f) return;
-                          try {
-                            const photo = await readFile(f);
-                            setData((s) => ({
-                              ...s,
-                              assets: s.assets.map((a) =>
-                                a.id === asset.id ? { ...a, photo } : a,
-                              ),
-                              events: [
-                                log(asset.id, "Equipment photo updated"),
-                                ...s.events,
-                              ],
-                            }));
-                            setToast("Equipment photo updated");
-                          } catch (error) {
-                            setToast((error as Error).message);
-                          }
-                        }}
-                      />
-                    </label>
-                  )}
-                  <button className="secondary" onClick={() => setModal("qr")}>
-                    <QrCode size={16} /> Asset QR code
+                    <ArrowLeft size={16} /> Back to{" "}
+                    {role === "Director"
+                      ? "restaurant roadmap"
+                      : role === "Manager"
+                        ? "walkthrough"
+                        : "assigned jobs"}
                   </button>
-                </div>
-              </div>
-              <div className="tabs">
-                {["Overview", "Maintenance plan", "Service history"].map(
-                  (t) => (
-                    <button
-                      className={tab === t ? "chosen" : ""}
-                      onClick={() => setTab(t)}
-                      key={t}
-                    >
-                      {t}
-                    </button>
-                  ),
-                )}
-              </div>
-              {tab === "Overview" ? (
-                <div className="two-col">
-                  <section className="panel">
-                    <div className="panel-title">
-                      <h2>Equipment information</h2>
-                      <Settings2 size={17} />
+                  {asset.pendingApproval && (
+                    <div className="notice">
+                      New equipment submitted by the Manager. The Director must
+                      approve it before it joins the weekly walkthrough.
                     </div>
-                    <dl>
-                      <dt>Manufacturer</dt>
-                      <dd>{asset.make}</dd>
-                      <dt>Model</dt>
-                      <dd>{asset.model}</dd>
-                      <dt>Area</dt>
-                      <dd>{asset.area}</dd>
-                      <dt>Condition</dt>
-                      <dd>{asset.condition}</dd>
-                    </dl>
-                    {admin && (
-                      <label className="field">
-                        Update condition
-                        <select
-                          value={asset.condition}
-                          onChange={(e) => {
-                            const condition = e.target.value;
-                            setData((s) => ({
-                              ...s,
-                              assets: s.assets.map((a) =>
-                                a.id === asset.id ? { ...a, condition } : a,
-                              ),
-                              events: [
-                                log(
-                                  asset.id,
-                                  "Condition updated to " + condition,
-                                ),
-                                ...s.events,
-                              ],
-                            }));
-                          }}
-                        >
-                          <option>Good</option>
-                          <option>Needs attention</option>
-                          <option>Out of service</option>
-                        </select>
-                      </label>
-                    )}
-                  </section>
-                  <section className="panel">
-                    <div className="panel-title">
-                      <h2>Next steps</h2>
-                      <ClipboardCheck size={18} />
+                  )}
+                  <div className="asset-top">
+                    <div className="asset-image">
+                      {asset.photo ? (
+                        <MediaImage path={asset.photo} alt={asset.name} />
+                      ) : (
+                        <Wrench size={52} />
+                      )}
                     </div>
-                    {assetTasks.length ? (
-                      assetTasks.map((t) => (
-                        <div className="list-item" key={t.id}>
-                          <div>
-                            <strong>{t.title}</strong>
-                            <p>{t.date}</p>
-                          </div>
-                          <span className="badge">{t.status}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="empty">No scheduled work yet.</p>
-                    )}
-                    {admin && (
+                    <div>
+                      <span
+                        className={
+                          "badge " +
+                          (asset.condition === "Good" ? "green" : "amber")
+                        }
+                      >
+                        {asset.condition}
+                      </span>
+                      <h2>{asset.name}</h2>
+                      <p>
+                        {asset.make} · {asset.model}
+                      </p>
+                      <p className="muted">
+                        Asset ID · {asset.id.slice(0, 12)}
+                      </p>
+                      {admin && (
+                        <label className="secondary">
+                          Update equipment photo
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            capture="environment"
+                            hidden
+                            onChange={async (e) => {
+                              const f = e.target.files?.[0];
+                              if (!f) return;
+                              try {
+                                const photo = await readFile(f);
+                                setData((s) => ({
+                                  ...s,
+                                  assets: s.assets.map((a) =>
+                                    a.id === asset.id ? { ...a, photo } : a,
+                                  ),
+                                  events: [
+                                    log(asset.id, "Equipment photo updated"),
+                                    ...s.events,
+                                  ],
+                                }));
+                                setToast("Equipment photo updated");
+                              } catch (error) {
+                                setToast((error as Error).message);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
                       <button
                         className="secondary"
-                        onClick={() => setModal("schedule")}
+                        onClick={() => setModal("qr")}
                       >
-                        <Plus size={16} /> Schedule inspection
+                        <QrCode size={16} /> Asset QR code
                       </button>
-                    )}
-                  </section>
-                </div>
-              ) : tab === "Maintenance plan" ? (
-                <section className="panel">
-                  <div className="panel-title">
-                    <div>
-                      <h2>Maintenance intelligence</h2>
-                      <p>
-                        Administrator approval is required before scheduling.
-                      </p>
                     </div>
-                    <Sparkles size={20} />
                   </div>
-                  <div className="notice">
-                    <strong>Live research needs configuration</strong>
-                    <p>
-                      Manufacturer web research and image identification are not
-                      connected. Demo suggestions are examples, not verified
-                      maintenance instructions.
-                    </p>
+                  <div className="tabs">
+                    {["Overview", "Maintenance plan", "Service history"].map(
+                      (t) => (
+                        <button
+                          className={tab === t ? "chosen" : ""}
+                          onClick={() => setTab(t)}
+                          key={t}
+                        >
+                          {t}
+                        </button>
+                      ),
+                    )}
                   </div>
-                  {data.plans
-                    .filter((p) => p.assetId === asset.id)
-                    .map((p) => (
-                      <div className="plan" key={p.id}>
-                        <span className="badge amber">
-                          {p.simulated
-                            ? "Simulated · unverified"
-                            : "Manually entered"}
-                        </span>
-                        <h3>{p.title}</h3>
-                        <p>{p.frequency}</p>
-                        <p className="muted">
-                          {p.sources.length
-                            ? "Sources available"
-                            : "Confidence: unverified. No manufacturer source attached. Confirm make, model and manual."}
-                        </p>
-                        {admin && !p.approved ? (
+                  {tab === "Overview" ? (
+                    <div className="two-col">
+                      <section className="panel">
+                        <div className="panel-title">
+                          <h2>Equipment information</h2>
+                          <Settings2 size={17} />
+                        </div>
+                        <dl>
+                          <dt>Manufacturer</dt>
+                          <dd>{asset.make}</dd>
+                          <dt>Model</dt>
+                          <dd>{asset.model}</dd>
+                          <dt>Area</dt>
+                          <dd>{asset.area}</dd>
+                          <dt>Condition</dt>
+                          <dd>{asset.condition}</dd>
+                        </dl>
+                        {admin && (
+                          <label className="field">
+                            Update condition
+                            <select
+                              value={asset.condition}
+                              onChange={(e) => {
+                                const condition = e.target.value;
+                                setData((s) => ({
+                                  ...s,
+                                  assets: s.assets.map((a) =>
+                                    a.id === asset.id ? { ...a, condition } : a,
+                                  ),
+                                  events: [
+                                    log(
+                                      asset.id,
+                                      "Condition updated to " + condition,
+                                    ),
+                                    ...s.events,
+                                  ],
+                                }));
+                              }}
+                            >
+                              <option>Good</option>
+                              <option>Needs attention</option>
+                              <option>Out of service</option>
+                            </select>
+                          </label>
+                        )}
+                      </section>
+                      <section className="panel">
+                        <div className="panel-title">
+                          <h2>Next steps</h2>
+                          <ClipboardCheck size={18} />
+                        </div>
+                        {assetTasks.length ? (
+                          assetTasks.map((t) => (
+                            <div className="list-item" key={t.id}>
+                              <div>
+                                <strong>{t.title}</strong>
+                                <p>{t.date}</p>
+                              </div>
+                              <span className="badge">{t.status}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="empty">No scheduled work yet.</p>
+                        )}
+                        {admin && (
                           <button
                             className="secondary"
-                            onClick={() => {
-                              setData((s) => ({
-                                ...s,
-                                plans: s.plans.map((x) =>
-                                  x.id === p.id ? { ...x, approved: true } : x,
-                                ),
-                                events: [
-                                  log(
-                                    asset.id,
-                                    "Administrator approved demo/manual maintenance recommendation: " +
-                                      p.title,
-                                  ),
-                                  ...s.events,
-                                ],
-                              }));
-                              setModal("schedule");
-                            }}
+                            onClick={() => setModal("schedule")}
                           >
-                            <Check size={16} /> Approve and schedule
+                            <Plus size={16} /> Schedule inspection
                           </button>
-                        ) : (
-                          p.approved && (
-                            <span className="badge green">
-                              Approved by administrator
-                            </span>
-                          )
                         )}
-                      </div>
-                    ))}
-                  {admin && (
-                    <button
-                      className="secondary"
-                      onClick={() => {
-                        setData((s) => ({
-                          ...s,
-                          plans: [
-                            ...s.plans,
-                            {
-                              id: uid(),
-                              assetId: asset.id,
-                              title:
-                                "Inspect equipment condition and document findings",
-                              frequency:
-                                "Frequency must be set manually after manufacturer review",
-                              sources: [],
-                              simulated: true,
-                              approved: false,
-                            },
-                          ],
-                        }));
-                        setToast(
-                          "Added a clearly labeled demo suggestion; live research is unavailable",
-                        );
-                      }}
-                    >
-                      <Sparkles size={16} /> Add demo recommendation
-                    </button>
-                  )}
-                </section>
-              ) : (
-                <section className="panel">
-                  <h2>Complete asset history</h2>
-                  {data.events
-                    .filter((e) => e.assetId === asset.id)
-                    .map((e) => (
-                      <div className="timeline" key={e.id}>
-                        <span />
+                      </section>
+                    </div>
+                  ) : tab === "Maintenance plan" ? (
+                    <section className="panel">
+                      <div className="panel-title">
                         <div>
-                          <strong>{e.text}</strong>
+                          <h2>Maintenance intelligence</h2>
                           <p>
-                            {e.actor} · {new Date(e.time).toLocaleString()}
+                            Administrator approval is required before
+                            scheduling.
                           </p>
-                          {e.evidence && (
-                            <MediaLink path={e.evidence}>
-                              View attached evidence
-                            </MediaLink>
-                          )}
-                          {e.invoice && (
-                            <p>
-                              <MediaLink path={e.invoice}>
-                                View invoice
-                              </MediaLink>
-                            </p>
-                          )}
                         </div>
+                        <Sparkles size={20} />
                       </div>
-                    ))}
-                </section>
-              )}
-            </>
-          ) : [
-              "Overview",
-              "Inspections",
-              "Work orders",
-              "Maintenance",
-            ].includes(view) ? (
-            <Operations
-              key={role + view}
-              data={data}
-              setData={setData}
-              role={role}
-              propertyId={propertyId}
-              setPropertyId={setPropertyId}
-              mode={view === "Maintenance" ? "schedule" : "home"}
-              onAsset={(id) => {
-                setSelected(id);
-                setTab("Overview");
-              }}
-              onRegister={() => {
-                setReturnToRoadmap(role === "Director");
-                setModal("asset");
-              }}
-              onSchedule={showSchedule}
-              onSetup={() => go("Properties")}
-              onNewRestaurant={() => {
-                setSelected(null);
-                setModal("property");
-              }}
-              onRestaurantQR={() => {
-                setSelected(null);
-                setModal("qr");
-              }}
-              onAddRoom={() => setModal("area")}
-              onRole={(next) => {
-                setRole(next);
-                setSelected(null);
-                setView(
-                  next === "Manager"
-                    ? "Inspections"
-                    : next === "Subcontractor"
-                      ? "Work orders"
-                      : "Overview",
-                );
-              }}
-              notify={setToast}
-            />
-          ) : view === "Properties" ? (
-            <>
-              <div className="toolbar">
-                <select
-                  aria-label="Select property"
-                  value={property.id}
-                  onChange={(e) => setPropertyId(e.target.value)}
-                >
-                  {data.properties.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                <span>{property.client}</span>
-                {admin && (
-                  <button
-                    className="secondary"
-                    onClick={() => setModal("area")}
-                  >
-                    <Plus size={15} /> Add area
-                  </button>
-                )}
-                <button className="secondary" onClick={() => setModal("qr")}>
-                  <QrCode size={16} /> Property QR
-                </button>
-              </div>
-              <div className="two-col">
-                <section className="panel">
-                  <div className="panel-title">
-                    <h2>Floor plan</h2>
-                    {admin && (
-                      <button
-                        className="secondary"
-                        onClick={() => fileRef.current?.click()}
-                      >
-                        <Upload size={15} /> Upload PDF
-                      </button>
-                    )}
-                    <input
-                      hidden
-                      ref={fileRef}
-                      type="file"
-                      accept="application/pdf"
-                      onChange={(e) => uploadLayout(e.target.files?.[0])}
-                    />
-                  </div>
-                  {property.layout ? (
-                    <>
-                      <MediaPDF path={property.layout} />
-                      <p className="muted">
-                        Equipment tags below reference normalized positions on
-                        the uploaded plan.
-                      </p>
-                      <div className="pin-board">
-                        {data.assets
-                          .filter((a) => a.propertyId === property.id)
-                          .map((a, i) => (
-                            <button
-                              key={a.id}
-                              style={{
-                                left: `${a.x || 20 + i * 20}%`,
-                                top: `${a.y || 50}%`,
-                              }}
-                              onClick={() => {
-                                setSelected(a.id);
-                                setTab("Overview");
-                                setView("Asset register");
-                              }}
-                              title={a.name}
-                            >
-                              {i + 1}
-                            </button>
-                          ))}
+                      <div className="notice">
+                        <strong>Live research needs configuration</strong>
+                        <p>
+                          Manufacturer web research and image identification are
+                          not connected. Demo suggestions are examples, not
+                          verified maintenance instructions.
+                        </p>
                       </div>
-                    </>
-                  ) : (
-                    <div className="upload-empty">
-                      <FileText size={38} />
-                      <h3>Your restaurant, mapped.</h3>
-                      <p>
-                        Upload a floor-plan PDF to keep the layout
-                        <br />
-                        connected to your equipment records.
-                      </p>
+                      {data.plans
+                        .filter((p) => p.assetId === asset.id)
+                        .map((p) => (
+                          <div className="plan" key={p.id}>
+                            <span className="badge amber">
+                              {p.simulated
+                                ? "Simulated · unverified"
+                                : "Manually entered"}
+                            </span>
+                            <h3>{p.title}</h3>
+                            <p>{p.frequency}</p>
+                            <p className="muted">
+                              {p.sources.length
+                                ? "Sources available"
+                                : "Confidence: unverified. No manufacturer source attached. Confirm make, model and manual."}
+                            </p>
+                            {admin && !p.approved ? (
+                              <button
+                                className="secondary"
+                                onClick={() => {
+                                  setData((s) => ({
+                                    ...s,
+                                    plans: s.plans.map((x) =>
+                                      x.id === p.id
+                                        ? { ...x, approved: true }
+                                        : x,
+                                    ),
+                                    events: [
+                                      log(
+                                        asset.id,
+                                        "Administrator approved demo/manual maintenance recommendation: " +
+                                          p.title,
+                                      ),
+                                      ...s.events,
+                                    ],
+                                  }));
+                                  setModal("schedule");
+                                }}
+                              >
+                                <Check size={16} /> Approve and schedule
+                              </button>
+                            ) : (
+                              p.approved && (
+                                <span className="badge green">
+                                  Approved by administrator
+                                </span>
+                              )
+                            )}
+                          </div>
+                        ))}
                       {admin && (
                         <button
                           className="secondary"
-                          onClick={() => fileRef.current?.click()}
+                          onClick={() => {
+                            setData((s) => ({
+                              ...s,
+                              plans: [
+                                ...s.plans,
+                                {
+                                  id: uid(),
+                                  assetId: asset.id,
+                                  title:
+                                    "Inspect equipment condition and document findings",
+                                  frequency:
+                                    "Frequency must be set manually after manufacturer review",
+                                  sources: [],
+                                  simulated: true,
+                                  approved: false,
+                                },
+                              ],
+                            }));
+                            setToast(
+                              "Added a clearly labeled demo suggestion; live research is unavailable",
+                            );
+                          }}
                         >
-                          Choose PDF
+                          <Sparkles size={16} /> Add demo recommendation
                         </button>
                       )}
-                    </div>
+                    </section>
+                  ) : (
+                    <section className="panel">
+                      <h2>Complete asset history</h2>
+                      {data.events
+                        .filter((e) => e.assetId === asset.id)
+                        .map((e) => (
+                          <div className="timeline" key={e.id}>
+                            <span />
+                            <div>
+                              <strong>{e.text}</strong>
+                              <p>
+                                {e.actor} · {new Date(e.time).toLocaleString()}
+                              </p>
+                              {e.evidence && (
+                                <MediaLink path={e.evidence}>
+                                  View attached evidence
+                                </MediaLink>
+                              )}
+                              {e.invoice && (
+                                <p>
+                                  <MediaLink path={e.invoice}>
+                                    View invoice
+                                  </MediaLink>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                    </section>
                   )}
-                </section>
-                <section className="panel">
-                  <h2>Areas & equipment</h2>
-                  {property.areas.map((area) => (
-                    <div key={area} className="area">
-                      <h3>{area}</h3>
-                      {data.assets
-                        .filter(
-                          (a) =>
-                            a.propertyId === property.id && a.area === area,
-                        )
-                        .map((a) => (
+                </>
+              ) : [
+                  "Overview",
+                  "Inspections",
+                  "Work orders",
+                  "Maintenance",
+                ].includes(view) ? (
+                <Operations
+                  key={role + view}
+                  data={data}
+                  setData={setData}
+                  role={role}
+                  propertyId={propertyId}
+                  setPropertyId={setPropertyId}
+                  mode={view === "Maintenance" ? "schedule" : "home"}
+                  onAsset={(id) => {
+                    setSelected(id);
+                    setTab("Overview");
+                  }}
+                  onRegister={() => {
+                    setReturnToRoadmap(role === "Director");
+                    setModal("asset");
+                  }}
+                  onSchedule={showSchedule}
+                  onSetup={() => go("Properties")}
+                  onNewRestaurant={() => {
+                    setSelected(null);
+                    setModal("property");
+                  }}
+                  onRestaurantQR={() => {
+                    setSelected(null);
+                    setModal("qr");
+                  }}
+                  onAddRoom={() => setModal("area")}
+                  onRole={(next) => {
+                    setRole(next);
+                    setSelected(null);
+                    setView(
+                      next === "Manager"
+                        ? "Inspections"
+                        : next === "Subcontractor"
+                          ? "Work orders"
+                          : "Overview",
+                    );
+                  }}
+                  notify={setToast}
+                />
+              ) : view === "Properties" ? (
+                <>
+                  <div className="toolbar">
+                    <select
+                      aria-label="Select property"
+                      value={property.id}
+                      onChange={(e) => setPropertyId(e.target.value)}
+                    >
+                      {data.properties.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <span>{property.client}</span>
+                    {admin && (
+                      <button
+                        className="secondary"
+                        onClick={() => setModal("area")}
+                      >
+                        <Plus size={15} /> Add area
+                      </button>
+                    )}
+                    <button
+                      className="secondary"
+                      onClick={() => setModal("qr")}
+                    >
+                      <QrCode size={16} /> Property QR
+                    </button>
+                  </div>
+                  <div className="two-col">
+                    <section className="panel">
+                      <div className="panel-title">
+                        <h2>Floor plan</h2>
+                        {admin && (
                           <button
-                            className="list-item"
+                            className="secondary"
+                            onClick={() => fileRef.current?.click()}
+                          >
+                            <Upload size={15} /> Upload PDF
+                          </button>
+                        )}
+                        <input
+                          hidden
+                          ref={fileRef}
+                          type="file"
+                          accept="application/pdf"
+                          onChange={(e) => uploadLayout(e.target.files?.[0])}
+                        />
+                      </div>
+                      {property.layout ? (
+                        <>
+                          <MediaPDF path={property.layout} />
+                          <p className="muted">
+                            Equipment tags below reference normalized positions
+                            on the uploaded plan.
+                          </p>
+                          <div className="pin-board">
+                            {data.assets
+                              .filter((a) => a.propertyId === property.id)
+                              .map((a, i) => (
+                                <button
+                                  key={a.id}
+                                  style={{
+                                    left: `${a.x || 20 + i * 20}%`,
+                                    top: `${a.y || 50}%`,
+                                  }}
+                                  onClick={() => {
+                                    setSelected(a.id);
+                                    setTab("Overview");
+                                    setView("Asset register");
+                                  }}
+                                  title={a.name}
+                                >
+                                  {i + 1}
+                                </button>
+                              ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="upload-empty">
+                          <FileText size={38} />
+                          <h3>Your restaurant, mapped.</h3>
+                          <p>
+                            Upload a floor-plan PDF to keep the layout
+                            <br />
+                            connected to your equipment records.
+                          </p>
+                          {admin && (
+                            <button
+                              className="secondary"
+                              onClick={() => fileRef.current?.click()}
+                            >
+                              Choose PDF
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </section>
+                    <section className="panel">
+                      <h2>Areas & equipment</h2>
+                      {property.areas.map((area) => (
+                        <div key={area} className="area">
+                          <h3>{area}</h3>
+                          {data.assets
+                            .filter(
+                              (a) =>
+                                a.propertyId === property.id && a.area === area,
+                            )
+                            .map((a) => (
+                              <button
+                                className="list-item"
+                                key={a.id}
+                                onClick={() => {
+                                  setSelected(a.id);
+                                  setTab("Overview");
+                                  setView("Asset register");
+                                }}
+                              >
+                                <span>{a.name}</span>
+                                <ChevronRight size={16} />
+                              </button>
+                            ))}
+                          {!data.assets.some(
+                            (a) =>
+                              a.propertyId === property.id && a.area === area,
+                          ) && <p className="muted">No equipment registered</p>}
+                        </div>
+                      ))}
+                    </section>
+                  </div>
+                </>
+              ) : view === "Asset register" ? (
+                <>
+                  <div className="toolbar">
+                    <label className="search">
+                      <Search size={17} />
+                      <input
+                        placeholder="Search equipment, manufacturer, area…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                      />
+                    </label>
+                    <span>{filteredAssets.length} assets</span>
+                  </div>
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Equipment</th>
+                          <th>Property / area</th>
+                          <th>Make & model</th>
+                          <th>Condition</th>
+                          <th />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAssets.map((a) => (
+                          <tr
                             key={a.id}
                             onClick={() => {
                               setSelected(a.id);
                               setTab("Overview");
-                              setView("Asset register");
+                            }}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                setSelected(a.id);
+                                setTab("Overview");
+                              }
                             }}
                           >
-                            <span>{a.name}</span>
-                            <ChevronRight size={16} />
-                          </button>
+                            <td>
+                              <div className="equipment-cell">
+                                <span className="equipment-icon">
+                                  {a.photo ? (
+                                    <MediaImage path={a.photo} alt="" />
+                                  ) : (
+                                    <Wrench size={20} />
+                                  )}
+                                </span>
+                                <strong>{a.name}</strong>
+                              </div>
+                            </td>
+                            <td>
+                              {
+                                data.properties.find(
+                                  (p) => p.id === a.propertyId,
+                                )?.name
+                              }
+                              <small>{a.area}</small>
+                            </td>
+                            <td>
+                              {a.make}
+                              <small>{a.model}</small>
+                            </td>
+                            <td>
+                              <span
+                                className={
+                                  "badge " +
+                                  (a.condition === "Good" ? "green" : "amber")
+                                }
+                              >
+                                {a.condition}
+                              </span>
+                            </td>
+                            <td>
+                              <ChevronRight size={17} />
+                            </td>
+                          </tr>
                         ))}
-                      {!data.assets.some(
-                        (a) => a.propertyId === property.id && a.area === area,
-                      ) && <p className="muted">No equipment registered</p>}
-                    </div>
-                  ))}
-                </section>
-              </div>
+                      </tbody>
+                    </table>
+                    {!filteredAssets.length && (
+                      <p className="empty">No matching equipment.</p>
+                    )}
+                  </div>
+                </>
+              ) : null}
             </>
-          ) : view === "Asset register" ? (
-            <>
-              <div className="toolbar">
-                <label className="search">
-                  <Search size={17} />
-                  <input
-                    placeholder="Search equipment, manufacturer, area…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </label>
-                <span>{filteredAssets.length} assets</span>
-              </div>
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Equipment</th>
-                      <th>Property / area</th>
-                      <th>Make & model</th>
-                      <th>Condition</th>
-                      <th />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAssets.map((a) => (
-                      <tr
-                        key={a.id}
-                        onClick={() => {
-                          setSelected(a.id);
-                          setTab("Overview");
-                        }}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            setSelected(a.id);
-                            setTab("Overview");
-                          }
-                        }}
-                      >
-                        <td>
-                          <div className="equipment-cell">
-                            <span className="equipment-icon">
-                              {a.photo ? (
-                                <MediaImage path={a.photo} alt="" />
-                              ) : (
-                                <Wrench size={20} />
-                              )}
-                            </span>
-                            <strong>{a.name}</strong>
-                          </div>
-                        </td>
-                        <td>
-                          {
-                            data.properties.find((p) => p.id === a.propertyId)
-                              ?.name
-                          }
-                          <small>{a.area}</small>
-                        </td>
-                        <td>
-                          {a.make}
-                          <small>{a.model}</small>
-                        </td>
-                        <td>
-                          <span
-                            className={
-                              "badge " +
-                              (a.condition === "Good" ? "green" : "amber")
-                            }
-                          >
-                            {a.condition}
-                          </span>
-                        </td>
-                        <td>
-                          <ChevronRight size={17} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {!filteredAssets.length && (
-                  <p className="empty">No matching equipment.</p>
-                )}
-              </div>
-            </>
-          ) : null}
+          )}
         </main>
       </div>
       {toast && (
@@ -1148,7 +1137,7 @@ export default function Home() {
       {account && (
         <div className="modal-backdrop">
           <section
-            className="modal"
+            className="modal shared-panel"
             role="dialog"
             aria-modal="true"
             aria-label="Account"
@@ -1331,7 +1320,18 @@ export default function Home() {
                         autoComplete="current-password"
                       />
                     </label>
-                    <div className="form-row">
+                    <button
+                      className="secondary"
+                      value="signup"
+                      disabled={busy}
+                    >
+                      Create account
+                    </button>
+                    <ActionBar
+                      backLabel="Cancel"
+                      onBack={() => setAccount(false)}
+                      backDisabled={busy}
+                    >
                       <button
                         className="primary"
                         value="signin"
@@ -1339,14 +1339,7 @@ export default function Home() {
                       >
                         Sign in
                       </button>
-                      <button
-                        className="secondary"
-                        value="signup"
-                        disabled={busy}
-                      >
-                        Create account
-                      </button>
-                    </div>
+                    </ActionBar>
                     <p className="muted">
                       A new account starts with an empty home kitchen.
                       Browser-local demo records are kept separate.
@@ -1361,7 +1354,7 @@ export default function Home() {
       {modal && (
         <div className="modal-backdrop" onClick={() => setModal(null)}>
           <section
-            className="modal"
+            className="modal shared-panel"
             role="dialog"
             aria-modal="true"
             aria-label={modal}
@@ -1405,20 +1398,28 @@ export default function Home() {
                   <br />
                   The QR identifies this record and grants no database access.
                 </p>
-                <button className="secondary" onClick={() => window.print()}>
-                  Print QR label
-                </button>
-                {!asset && role === "Director" && (
-                  <button
-                    className="primary full"
-                    onClick={() => {
-                      setModal(null);
-                      setView("Overview");
-                    }}
-                  >
-                    Next: capture equipment <ArrowRight size={18} />
+                {!asset && (
+                  <button className="secondary" onClick={() => window.print()}>
+                    Print QR label
                   </button>
                 )}
+                <ActionBar backLabel="Close" onBack={() => setModal(null)}>
+                  {!asset && role === "Director" ? (
+                    <button
+                      className="primary"
+                      onClick={() => {
+                        setModal(null);
+                        setView("Overview");
+                      }}
+                    >
+                      Next: capture equipment <ArrowRight size={18} />
+                    </button>
+                  ) : (
+                    <button className="primary" onClick={() => window.print()}>
+                      Print QR label
+                    </button>
+                  )}
+                </ActionBar>
               </div>
             ) : (
               <form
@@ -1750,18 +1751,21 @@ export default function Home() {
                     </p>
                   </>
                 )}
-                <button className="primary full" disabled={busy}>
-                  {busy
-                    ? "Saving…"
-                    : modal === "schedule"
-                      ? "Schedule work"
-                      : "Save " + (modal === "asset" ? "equipment" : modal)}
-                </button>
+                <ActionBar backLabel="Cancel" onBack={() => setModal(null)}>
+                  <button className="primary full" disabled={busy}>
+                    {busy
+                      ? "Saving…"
+                      : modal === "schedule"
+                        ? "Schedule work"
+                        : "Save " + (modal === "asset" ? "equipment" : modal)}
+                  </button>
+                </ActionBar>
               </form>
             )}
           </section>
         </div>
       )}
+      <div id="workspace-overlays" />
     </div>
   );
 }
