@@ -69,3 +69,9 @@ This is a **2D information twin**, not 3D BIM/CAD. Do not implement payments, au
 5. Calendar integration, dashboards and demonstration polish
 
 The primary objective is a demonstrable end-to-end operational loop, not feature completeness.
+
+## Running the first-pass application
+
+The repository now contains an interactive Next.js demo. Run `npm ci` and `npm run dev`; `npm run build` produces the production application. No credentials are required for the browser-local demo.
+
+See [current build status and deployment instructions](docs/BUILD-STATUS.md) for exactly what works, which integrations are simulated or unconnected, known limitations, and the walkthrough. The foundation SQL is intentionally fail-closed and is not a completed production backend.
