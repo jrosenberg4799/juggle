@@ -1,4 +1,6 @@
-# Juggle prototype status — Version 2.3
+# Juggle prototype status — Version 2.4
+
+The [shared design guide](SHARED-DESIGN.md) describes consistent page boundaries and desktop/iPad/phone layout rules. No data schema or persistence changes were made in this release.
 
 Read the [real kitchen test](REAL-KITCHEN-TEST.md) for the current persistence receipt and tonight’s setup. The live backend remains one private workspace table. The proposed next structure is only restaurants, equipment and events.
 

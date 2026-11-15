@@ -4,6 +4,7 @@ Keep project explanations, specifications, diagrams and exported office document
 
 | File | Purpose |
 | --- | --- |
+| `SHARED-DESIGN.md` / `.docx` | Current Version 2.4 shared frame, responsive rules and device QA checklist |
 | `REAL-KITCHEN-TEST.md` / `.docx` | Current real-data test, verified saves and storage behavior |
 | `SQL-STRUCTURE-PREVIEW.xlsx` | Two-tab export of the simple three-table Google Sheet |
 | `ONE-BIG-NEXT-STEP.md` / `.docx` | Selected Version 2.2 interface and save-status behavior |

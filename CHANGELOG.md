@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 2.4 — shared responsive frame (v2.4.0)
+
+- Shared header, role selector, fixed-height save strip, title slot and centered page boundaries across every view.
+- Replace width-changing side navigation with an overlay Tools drawer.
+- Shared panels and Back/Next rails for registration, inspections, work and setup dialogs.
+- Phone single-column layouts, iPad touch spacing, safe areas, short landscape mode and keyboard-aware actions.
+- Keep loading/errors inside the frame; lock background scrolling for overlays and reserve scrollbar space.
+- 19 tests plus production build; hands-on tablet/phone QA remains pending.
+
+
 ## Version 2.3 — verified real kitchen persistence (v2.3.0)
 
 - Initialize/load a real private workspace on sign-in; preserve existing data.

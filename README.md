@@ -1,6 +1,8 @@
 # Juggle — Cocozza Maintenance OS (MVP)
 
-## Current version: Version 2.3 — real kitchen saves
+## Current version: Version 2.4 — shared responsive frame
+
+All screens now use shared header, status, title, panel and action boundaries, with desktop/iPad/phone layouts. See the [shared design guide](docs/SHARED-DESIGN.md). Real cloud saves and private image storage continue unchanged.
 
 Use the [real kitchen test](docs/REAL-KITCHEN-TEST.md) to capture actual equipment tonight. Cloud saves are verified by reading back the exact saved record. The simple SQL preview has two tabs and a three-table target; tonight uses the existing one-table private backend without a schema rewrite.
 
