@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Monitor, Tablet, Smartphone, RotateCw, ArrowLeft } from "lucide-react";
+import { Monitor, Tablet, Smartphone, RotateCw, ArrowLeft, ChevronDown } from "lucide-react";
 import { version } from "@/package.json";
 import "./preview.css";
 
@@ -22,6 +22,9 @@ export default function DevicePreview() {
     <div className="device-preview">
       <header className="preview-toolbar">
         <a className="preview-back" href="/"><ArrowLeft size={18} /> App</a>
+        <details className="preview-picker" open>
+          <summary><Monitor size={18} /> Devices <span>· {device.label}</span><ChevronDown size={16} /></summary>
+        <div className="preview-picker-options">
         <div className="preview-devices" role="group" aria-label="Preview device">
           {devices.map(({ id, label, Icon }) => (
             <button key={id} type="button" aria-pressed={deviceId === id}
@@ -32,6 +35,8 @@ export default function DevicePreview() {
         </div>
         <button className="preview-rotate" type="button" onClick={() => setLandscape(!landscape)}
           aria-label="Rotate preview" title="Rotate preview"><RotateCw size={18} /></button>
+        </div>
+        </details>
         <small>v{version}</small>
       </header>
       <p className="preview-caption" aria-live="polite">

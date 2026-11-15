@@ -14,3 +14,15 @@
   .preview-devices button span { font-size: 11px; }
   .preview-canvas { padding: 0 8px 16px; }
 }
+
+.preview-picker { margin-left: auto; }
+.preview-picker summary { display: flex; align-items: center; gap: 8px; list-style: none; min-height: 44px; padding: 8px 12px; border: 1px solid #b8c4d3; border-radius: 7px; background: #f5f7fa; cursor: pointer; font-size: 13px; font-weight: 600; }
+.preview-picker summary::-webkit-details-marker { display: none; }
+.preview-picker[open] summary > svg:last-child { transform: rotate(180deg); }
+.preview-picker-options { display: flex; align-items: center; gap: 8px; padding-top: 8px; }
+.preview-picker summary:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+@media (max-width: 600px) {
+ .preview-picker { flex: 1; }
+ .preview-picker-options { flex-wrap: wrap; }
+ .preview-devices { margin: 0; }
+}

@@ -5,3 +5,5 @@ The small version below the Juggle logo comes directly from package.json. Click 
 Versioning: MAJOR.MINOR.PATCH. Major is a breaking workflow/data change; minor is a compatible new feature; patch is a fix or polish. Bump package.json and package-lock.json together with npm version, update CHANGELOG.md and tag the release. This feature is 2.5.0.
 
 Preview dimensions check CSS layout, not physical camera, keyboard or device behavior. Physical-device QA remains necessary.
+
+Version 2.5.1: click Devices to fold/unfold the selector. The button always remains visible and names the selected device. Folding preserves the running preview. The normal app also shows a Devices link below the logo.

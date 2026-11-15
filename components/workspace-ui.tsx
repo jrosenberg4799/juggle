@@ -54,7 +54,7 @@ export function WorkspaceHeader({
         >
           juggle<span>®</span>
         </button>
-        <a className="app-version" href="/preview" target="_top" title="Open desktop, iPad and phone preview">v{version}<span> · Preview</span></a>
+        <a className="app-version" href="/preview" target="_top" title="Open desktop, iPad and phone preview">v{version} · Devices</a>
         </div>
         <button
           type="button"

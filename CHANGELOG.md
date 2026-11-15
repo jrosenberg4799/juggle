@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.5.1
+
+- Foldable device selector keeps a visible Devices button when closed.
+- App header explicitly labels the device preview link.
+
+
 ## 2.5.0
 
 - Subtle version label reads directly from package.json.
