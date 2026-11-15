@@ -1,4 +1,6 @@
-# Juggle prototype status — Version 2.2
+# Juggle prototype status — Version 2.3
+
+Read the [real kitchen test](REAL-KITCHEN-TEST.md) for the current persistence receipt and tonight’s setup. The live backend remains one private workspace table. The proposed next structure is only restaurants, equipment and events.
 
 The selected [One big next step](ONE-BIG-NEXT-STEP.md) design is the current interface. Local versus cloud-save state is explicit.
 

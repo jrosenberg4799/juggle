@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 2.3 — verified real kitchen persistence (v2.3.0)
+
+- Initialize/load a real private workspace on sign-in; preserve existing data.
+- Read back each cloud save and verify both revision and contents before showing Cloud saved.
+- Show a receipt with saved time, appliance count and unique file-reference count.
+- Verify private file viewing access after upload; keep file bytes outside SQL.
+- Stop on cloud-load errors instead of falling back into a demo; add a manual Save now & verify action.
+- Simplify SQL preview to two tabs / three planned app tables; no schema rewrite for tonight.
+- Create/read back the owner’s empty home-kitchen starter record; no equipment or images invented.
+- 15 automated tests plus production build; browser/phone upload and physical QR checks remain manual.
+
+
 ## Version 2.2 — One big next step (v2.2.0)
 
 - Apply the selected guided design: three compact setup steps, one bold primary action, optional fields/details collapsed.

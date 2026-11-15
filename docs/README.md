@@ -4,6 +4,8 @@ Keep project explanations, specifications, diagrams and exported office document
 
 | File | Purpose |
 | --- | --- |
+| `REAL-KITCHEN-TEST.md` / `.docx` | Current real-data test, verified saves and storage behavior |
+| `SQL-STRUCTURE-PREVIEW.xlsx` | Two-tab export of the simple three-table Google Sheet |
 | `ONE-BIG-NEXT-STEP.md` / `.docx` | Selected Version 2.2 interface and save-status behavior |
 | `ACTION-ROADMAP.md` / `.docx` | Current Version 2.1 registration, first sweep, Manager handoff and specialist-request flow |
 | `VERSION-2-GUIDE.md` / `.docx` | Current Version 2 operator walkthrough and limitations |

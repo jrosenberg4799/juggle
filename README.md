@@ -1,6 +1,8 @@
 # Juggle — Cocozza Maintenance OS (MVP)
 
-## Current version: Version 2.2 — One big next step
+## Current version: Version 2.3 — real kitchen saves
+
+Use the [real kitchen test](docs/REAL-KITCHEN-TEST.md) to capture actual equipment tonight. Cloud saves are verified by reading back the exact saved record. The simple SQL preview has two tabs and a three-table target; tonight uses the existing one-table private backend without a schema rewrite.
 
 The selected interface direction is now live: one active task, a compact three-step setup strip and one large blue Next action. See the [selected design guide](docs/ONE-BIG-NEXT-STEP.md). The save banner explicitly distinguishes local-only data from an actual cloud save.
 
