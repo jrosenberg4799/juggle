@@ -1,5 +1,9 @@
 # Juggle — Cocozza Maintenance OS (MVP)
 
+## Version 1 baseline
+
+The initial reviewable prototype is saved as Git tag **v1.0.0**. See the [changelog](CHANGELOG.md), [client workflow guide](docs/CLIENT-WORKFLOW.md), and [versioning instructions](docs/VERSIONING.md). This is the first prototype baseline; known limitations remain documented in the build status.
+
 An iPad-first, QR-enabled restaurant maintenance traceability prototype.
 
 ## Goal
