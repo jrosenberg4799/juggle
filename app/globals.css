@@ -3349,3 +3349,40 @@ body {
     font-size: 18px;
   }
 }
+.cloud-receipt {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 5px;
+}
+.cloud-proof {
+  padding: 17px;
+  background: #edf3ff;
+  border: 1px solid #cbdaf0;
+  border-radius: 6px;
+  margin: 18px 0;
+}
+.cloud-proof p,
+.cloud-proof a {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.cloud-proof a {
+  color: #1749bc;
+}
+.cloud-error-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 25px;
+}
+.cloud-error-screen > section {
+  max-width: 650px;
+}
+.cloud-error-screen h1 {
+  font-size: 27px;
+}
+.cloud-error-screen .secondary {
+  margin-left: 12px;
+}

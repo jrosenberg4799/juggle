@@ -35,15 +35,23 @@ export async function uploadFile(file: File): Promise<string> {
   const suffix =
     file.type === "application/pdf" ? "pdf" : file.type.split("/")[1];
   const id = crypto.randomUUID() + "." + suffix;
-  const session = supabase
-    ? (await supabase.auth.getSession()).data.session
-    : null;
+  const auth = supabase ? await supabase.auth.getSession() : null;
+  if (auth?.error)
+    throw Error(
+      "Your sign-in could not be verified. Sign in again before uploading.",
+    );
+  const session = auth?.data.session || null;
   if (session && supabase) {
     const path = session.user.id + "/" + id;
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(path, file, { contentType: file.type, upsert: false });
     if (error) throw Error("Upload failed: " + error.message);
+    const check = await supabase.storage.from(BUCKET).createSignedUrl(path, 60);
+    if (check.error || !check.data?.signedUrl)
+      throw Error(
+        "Upload accepted but private file read-back could not be verified. Please try again.",
+      );
     return "storage://" + path;
   }
   await localPut(id, file);

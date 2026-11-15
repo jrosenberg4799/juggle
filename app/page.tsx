@@ -45,7 +45,13 @@ import {
   migrateLegacyFiles,
 } from "@/lib/media";
 import { supabase } from "@/lib/supabase";
-import { INITIAL_HOME, loadWorkspace, saveWorkspace } from "@/lib/prototype";
+import {
+  INITIAL_HOME,
+  loadWorkspace,
+  saveWorkspace,
+  openRealWorkspace,
+} from "@/lib/prototype";
+import { CloudReceipt, ReadbackError } from "@/lib/cloud-receipt";
 import { Operations } from "@/components/operations";
 import { taskOwner } from "@/lib/operations";
 type View =
@@ -83,6 +89,9 @@ export default function Home() {
     [userEmail, setUserEmail] = useState(""),
     [cloudReady, setCloudReady] = useState(false),
     [syncStatus, setSyncStatus] = useState("Local demo");
+  const [cloudReceipt, setCloudReceipt] = useState<CloudReceipt | null>(null);
+  const [cloudLoadError, setCloudLoadError] = useState("");
+  const saveGeneration = useRef(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const revision = useRef(0);
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
@@ -91,19 +100,25 @@ export default function Home() {
   useEffect(() => {
     let active = true;
     async function boot() {
+      let openingCloud = false;
       try {
-        const session = supabase
-          ? (await supabase.auth.getSession()).data.session
-          : null;
+        const auth = supabase ? await supabase.auth.getSession() : null;
+        if (auth?.error) {
+          openingCloud = true;
+          throw auth.error;
+        }
+        const session = auth?.data.session || null;
+        openingCloud = Boolean(session);
         if (session) {
-          const remote = await loadWorkspace();
+          const remote = await openRealWorkspace();
           if (!active) return;
           setUserEmail(session.user.email || "Signed in");
           setData(remote?.state || INITIAL_HOME);
           revision.current = remote?.revision || 0;
           setPropertyId((remote?.state || INITIAL_HOME).properties[0].id);
           setCloudReady(true);
-          setSyncStatus(remote ? "Saved to Supabase" : "No cloud record yet");
+          setCloudReceipt(remote.receipt);
+          setSyncStatus("Saved to Supabase");
         } else {
           const saved = localStorage.getItem("juggle-demo-v1");
           if (saved) {
@@ -121,8 +136,10 @@ export default function Home() {
           setView("Properties");
         }
       } catch (error) {
-        if (active)
+        if (active) {
+          if (openingCloud) setCloudLoadError((error as Error).message);
           setToast("Could not load workspace: " + (error as Error).message);
+        }
       }
       if (active) setReady(true);
     }
@@ -142,14 +159,20 @@ export default function Home() {
         initialCloudLoad.current = false;
         return;
       }
+      const generation = ++saveGeneration.current;
       setSyncStatus("Saving…");
       const timer = setTimeout(() => {
         saveQueue.current = saveQueue.current.then(async () => {
           if (conflict.current) return;
           try {
-            revision.current = await saveWorkspace(data, revision.current);
-            setSyncStatus("Saved to Supabase");
+            const receipt = await saveWorkspace(data, revision.current);
+            revision.current = receipt.revision;
+            setCloudReceipt(receipt);
+            if (generation === saveGeneration.current)
+              setSyncStatus("Saved to Supabase");
           } catch (error) {
+            if (error instanceof ReadbackError)
+              revision.current = error.committedRevision;
             conflict.current = true;
             setSyncStatus("Not saved — reload required");
             setToast("Cloud save failed: " + (error as Error).message);
@@ -247,6 +270,31 @@ export default function Home() {
         .includes(search.toLowerCase()),
     );
   const openTasks = data.tasks.filter((t) => t.status !== "Verified");
+  if (cloudLoadError)
+    return (
+      <div className="cloud-error-screen">
+        <section className="panel">
+          <h1>We couldn’t open your cloud kitchen.</h1>
+          <p>{cloudLoadError}</p>
+          <p>
+            We have not switched you into a local demo. Retry before entering
+            real kitchen records.
+          </p>
+          <button className="primary" onClick={() => location.reload()}>
+            Retry cloud connection
+          </button>
+          <button
+            className="secondary"
+            onClick={async () => {
+              await supabase?.auth.signOut();
+              location.reload();
+            }}
+          >
+            Sign out
+          </button>
+        </section>
+      </div>
+    );
   if (!ready)
     return (
       <div className="loading-screen">
@@ -432,6 +480,14 @@ export default function Home() {
               ? userEmail + " · " + syncStatus
               : "Photos and records stay on this device. Sign in to save them online."}{" "}
             Role switching is simulated.
+            {cloudReady && cloudReceipt && (
+              <span className="cloud-receipt">
+                Read back from Supabase · revision {cloudReceipt.revision} ·{" "}
+                {cloudReceipt.equipment} appliances · {cloudReceipt.files} file
+                references ·{" "}
+                {new Date(cloudReceipt.savedAt).toLocaleTimeString()}
+              </span>
+            )}
           </span>
           <button onClick={() => setAccount(true)}>
             {cloudReady ? "Account & storage" : "Sign in to save online"}
@@ -1114,6 +1170,69 @@ export default function Home() {
             {cloudReady ? (
               <>
                 <p>{userEmail}</p>
+                <div className="cloud-proof">
+                  <strong>Real Supabase storage</strong>
+                  <p>
+                    Database: prototype_workspaces (private to your account).
+                    Photos/PDFs: private maintenance-evidence bucket.
+                  </p>
+                  {cloudReceipt && (
+                    <p>
+                      Last read-back: revision {cloudReceipt.revision},{" "}
+                      {cloudReceipt.restaurants} restaurant records,{" "}
+                      {cloudReceipt.equipment} appliances, {cloudReceipt.files}{" "}
+                      file references.
+                    </p>
+                  )}
+                  <a
+                    href="https://docs.google.com/spreadsheets/d/1HEAdhmE8GHEaUbTc3Gyn3b713qUthZKBx0pYfIpFJoY/edit"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open the simple three-table plan
+                  </a>
+                  <button
+                    className="secondary full"
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      const generation = ++saveGeneration.current;
+                      setSyncStatus("Saving…");
+                      saveQueue.current = saveQueue.current.then(async () => {
+                        try {
+                          const remote = await loadWorkspace();
+                          if (remote && remote.revision !== revision.current)
+                            throw Error(
+                              "Another device changed this workspace. Reload before saving.",
+                            );
+                          const receipt = await saveWorkspace(
+                            data,
+                            revision.current,
+                          );
+                          revision.current = receipt.revision;
+                          conflict.current = false;
+                          setCloudReceipt(receipt);
+                          if (generation === saveGeneration.current)
+                            setSyncStatus("Saved to Supabase");
+                          setToast(
+                            "Save verified: Supabase returned the exact records just saved.",
+                          );
+                        } catch (error) {
+                          if (error instanceof ReadbackError)
+                            revision.current = error.committedRevision;
+                          conflict.current = true;
+                          setSyncStatus("Not saved — reload required");
+                          setToast((error as Error).message);
+                        } finally {
+                          setBusy(false);
+                        }
+                      });
+                      await saveQueue.current;
+                    }}
+                  >
+                    Save now & verify in Supabase
+                  </button>
+                </div>
                 <p className="muted">
                   Records are private to your account. Sign in with this account
                   on your phone to open printed QR labels. Role switching
