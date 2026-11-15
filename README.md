@@ -4,6 +4,10 @@
 
 The initial reviewable prototype is saved as Git tag **v1.0.0**. See the [changelog](CHANGELOG.md), [client workflow guide](docs/CLIENT-WORKFLOW.md), and [versioning instructions](docs/VERSIONING.md). This is the first prototype baseline; known limitations remain documented in the build status.
 
+## Workflow planning documents
+
+The [documents folder](docs/README.md) contains Markdown sources, Word copies and the Excel architecture draft. The [Version 2 workflow plan](docs/WORKFLOW-V2-DRAFT.md) records the confirmed Director / Manager / Subcontractor responsibilities and proposes clearer role-specific screens. These planning documents do not change the deployed Version 1 app.
+
 An iPad-first, QR-enabled restaurant maintenance traceability prototype.
 
 ## Goal
