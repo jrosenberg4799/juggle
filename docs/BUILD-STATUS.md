@@ -1,4 +1,6 @@
-# Juggle prototype status — Version 2.1
+# Juggle prototype status — Version 2.2
+
+The selected [One big next step](ONE-BIG-NEXT-STEP.md) design is the current interface. Local versus cloud-save state is explicit.
 
 The [action-roadmap guide](ACTION-ROADMAP.md) describes the current registration → sweep → Manager handoff flow, contact fields and specialist requests.
 

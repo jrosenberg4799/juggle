@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 2.2 — One big next step (v2.2.0)
+
+- Apply the selected guided design: three compact setup steps, one bold primary action, optional fields/details collapsed.
+- Open the restaurant QR after registration, with a direct Next: capture equipment action.
+- Hide the permanent sidebar in operational views; keep Tools and detailed records accessible.
+- Use blue for action, green for confirmation, amber for unsynced/pending and red for overdue decisions or failed saves.
+- Distinguish a signed-in session from an actually saved cloud workspace; retain failed-save status until reload.
+
+
 ## Version 2.1 — action-first roadmap (v2.1.0)
 
 - Six-step Director roadmap with one primary action per stage.

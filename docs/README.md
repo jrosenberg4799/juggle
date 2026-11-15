@@ -4,6 +4,7 @@ Keep project explanations, specifications, diagrams and exported office document
 
 | File | Purpose |
 | --- | --- |
+| `ONE-BIG-NEXT-STEP.md` / `.docx` | Selected Version 2.2 interface and save-status behavior |
 | `ACTION-ROADMAP.md` / `.docx` | Current Version 2.1 registration, first sweep, Manager handoff and specialist-request flow |
 | `VERSION-2-GUIDE.md` / `.docx` | Current Version 2 operator walkthrough and limitations |
 | `CLIENT-WORKFLOW.md` | Version 1 client workflow snapshot |

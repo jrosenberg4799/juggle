@@ -1,6 +1,8 @@
 # Juggle — Cocozza Maintenance OS (MVP)
 
-## Current version: Version 2.1 — action roadmap
+## Current version: Version 2.2 — One big next step
+
+The selected interface direction is now live: one active task, a compact three-step setup strip and one large blue Next action. See the [selected design guide](docs/ONE-BIG-NEXT-STEP.md). The save banner explicitly distinguishes local-only data from an actual cloud save.
 
 The current action-first update is documented in the [restaurant roadmap guide](docs/ACTION-ROADMAP.md). Register → document → hand off → inspect → request work → review.
 
