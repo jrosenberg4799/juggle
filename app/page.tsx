@@ -45,6 +45,8 @@ import {
 } from "@/lib/media";
 import { supabase } from "@/lib/supabase";
 import { INITIAL_HOME, loadWorkspace, saveWorkspace } from "@/lib/prototype";
+import { Operations } from "@/components/operations";
+import { taskOwner } from "@/lib/operations";
 type View =
   | "Overview"
   | "Properties"
@@ -64,7 +66,7 @@ export default function Home() {
   const [data, setData] = useState<State>(seed),
     [ready, setReady] = useState(false),
     [view, setView] = useState<View>("Overview"),
-    [role, setRole] = useState<Role>("Administrator"),
+    [role, setRole] = useState<Role>("Director"),
     [selected, setSelected] = useState<string | null>(null),
     [propertyId, setPropertyId] = useState("mercer"),
     [search, setSearch] = useState(""),
@@ -163,12 +165,12 @@ export default function Home() {
     }
   }, [toast]);
   const actor =
-    role === "Administrator"
-      ? "Jesse · Administrator"
-      : role === "Inspector"
-        ? "Alex · Inspector"
-        : "Sam · Contractor";
-  const admin = role === "Administrator";
+    role === "Director"
+      ? "Jesse · Director"
+      : role === "Manager"
+        ? "Alex · Manager"
+        : "Sam · Subcontractor";
+  const admin = role === "Director";
   const property =
     data.properties.find((p) => p.id === propertyId) || data.properties[0];
   const asset = data.assets.find((a) => a.id === selected);
@@ -180,49 +182,25 @@ export default function Home() {
     actor,
     time: new Date().toISOString(),
   });
+  function showSchedule() {
+    const targetProperty = asset?.propertyId || property.id;
+    if (asset) setPropertyId(asset.propertyId);
+    if (
+      !data.assets.some(
+        (a) => a.propertyId === targetProperty && !a.pendingApproval,
+      )
+    ) {
+      setToast("Register and approve equipment before scheduling work.");
+      setModal("asset");
+      return;
+    }
+    setModal("schedule");
+  }
   function go(v: View) {
     setView(v);
     setSelected(null);
     setSearch("");
     setMobile(false);
-  }
-  function updateTask(
-    task: Task,
-    status: Task["status"],
-    extra: Partial<Task> = {},
-  ) {
-    setData((s) => ({
-      ...s,
-      tasks: s.tasks.map((t) =>
-        t.id === task.id ? { ...t, ...extra, status } : t,
-      ),
-      events: [
-        {
-          ...log(
-            task.assetId,
-            `${task.title}: ${status}${extra.notes ? " — " + extra.notes : ""}${extra.repair ? " — " + extra.repair : ""}`,
-          ),
-          evidence: extra.evidence,
-          invoice: extra.invoice,
-        },
-        ...s.events,
-      ],
-    }));
-    setToast("Saved to asset history");
-  }
-  function download(task: Task) {
-    const a = data.assets.find((x) => x.id === task.assetId)!;
-    const url = URL.createObjectURL(
-      new Blob([calendarFile(task, a)], { type: "text/calendar" }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "juggle-maintenance.ics";
-    link.click();
-    URL.revokeObjectURL(url);
-    setToast(
-      "Calendar file downloaded. Import into Google Calendar; reminder support depends on calendar settings.",
-    );
   }
   async function uploadLayout(file?: File) {
     if (!file) return;
@@ -245,11 +223,22 @@ export default function Home() {
       setToast((e as Error).message);
     }
   }
-  const filteredAssets = data.assets.filter((a) =>
-    (a.name + " " + a.make + " " + a.area)
-      .toLowerCase()
-      .includes(search.toLowerCase()),
-  );
+  const filteredAssets = data.assets
+    .filter(
+      (a) =>
+        role !== "Subcontractor" ||
+        data.tasks.some(
+          (t) =>
+            t.assetId === a.id &&
+            taskOwner(t) === "Subcontractor" &&
+            t.status !== "Issue reported",
+        ),
+    )
+    .filter((a) =>
+      (a.name + " " + a.make + " " + a.area)
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+    );
   const openTasks = data.tasks.filter((t) => t.status !== "Verified");
   if (!ready)
     return (
@@ -273,25 +262,50 @@ export default function Home() {
         </div>
         <div className="nav-label">WORKSPACE</div>
         <nav>
-          {nav.map((n) => (
-            <button
-              key={n.name}
-              className={view === n.name ? "active" : ""}
-              onClick={() => go(n.name)}
-            >
-              <n.icon size={19} />
-              {n.name}
-              {n.name === "Work orders" && (
-                <small>
+          {nav
+            .filter((n) =>
+              role === "Director"
+                ? [
+                    "Overview",
+                    "Properties",
+                    "Asset register",
+                    "Maintenance",
+                  ].includes(n.name)
+                : (role === "Manager"
+                    ? ["Inspections", "Maintenance", "Asset register"]
+                    : ["Work orders", "Maintenance", "Asset register"]
+                  ).includes(n.name),
+            )
+            .map((n) => (
+              <button
+                key={n.name}
+                className={view === n.name ? "active" : ""}
+                onClick={() => go(n.name)}
+              >
+                <n.icon size={19} />
+                {
                   {
-                    data.tasks.filter((t) =>
-                      ["Assigned", "Awaiting verification"].includes(t.status),
-                    ).length
-                  }
-                </small>
-              )}
-            </button>
-          ))}
+                    Overview: "Director board",
+                    Properties: "Restaurants & rooms",
+                    "Asset register": "Equipment",
+                    Maintenance: "Gantt schedule",
+                    Inspections: "Weekly walkthrough",
+                    "Work orders": "Assigned jobs",
+                  }[n.name]
+                }
+                {n.name === "Work orders" && (
+                  <small>
+                    {
+                      data.tasks.filter((t) =>
+                        ["Assigned", "Awaiting verification"].includes(
+                          t.status,
+                        ),
+                      ).length
+                    }
+                  </small>
+                )}
+              </button>
+            ))}
         </nav>
         <div className="sidebar-bottom">
           <div className="help">
@@ -317,17 +331,17 @@ export default function Home() {
                   setRole(e.target.value as Role);
                   setSelected(null);
                   setView(
-                    e.target.value === "Inspector"
+                    e.target.value === "Manager"
                       ? "Inspections"
-                      : e.target.value === "Contractor"
+                      : e.target.value === "Subcontractor"
                         ? "Work orders"
                         : "Overview",
                   );
                 }}
               >
-                <option>Administrator</option>
-                <option>Inspector</option>
-                <option>Contractor</option>
+                <option>Director</option>
+                <option>Manager</option>
+                <option>Subcontractor</option>
               </select>
             </div>
           </div>
@@ -346,7 +360,30 @@ export default function Home() {
             Workspace <ChevronRight size={14} /> <strong>{view}</strong>
           </span>
           <div className="header-right">
-            <span className="demo-dot" /> DEMO WORKSPACE{" "}
+            <label className="interface-switch">
+              Interface
+              <select
+                aria-label="Change interface"
+                value={role}
+                onChange={(e) => {
+                  const next = e.target.value as Role;
+                  setRole(next);
+                  setSelected(null);
+                  setModal(null);
+                  setView(
+                    next === "Director"
+                      ? "Overview"
+                      : next === "Manager"
+                        ? "Inspections"
+                        : "Work orders",
+                  );
+                }}
+              >
+                <option>Director</option>
+                <option>Manager</option>
+                <option>Subcontractor</option>
+              </select>
+            </label>
             <span className="avatar small">{actor[0]}</span>
           </div>
         </header>
@@ -377,26 +414,44 @@ export default function Home() {
               }
             }}
           >
-            Reset demo
+            {cloudReady ? "Reset workspace" : "Reload sample kitchen"}
           </button>
         </div>
         <main>
           <div className="page-heading">
             <div>
-              <div className="eyebrow">COCOZZA · MAINTENANCE OS</div>
+              <div className="eyebrow">
+                {role === "Director"
+                  ? "DIRECTOR · RESTAURANT OVERSIGHT"
+                  : role === "Manager"
+                    ? "MANAGER · ROOMS & EQUIPMENT"
+                    : "SUBCONTRACTOR · ASSIGNED WORK"}
+              </div>
               <h1>
                 {asset
                   ? asset.name
                   : view === "Overview"
-                    ? "Maintenance, in order."
-                    : view}
+                    ? "Keep every kitchen running."
+                    : (
+                        {
+                          Inspections: "Check the kitchen.",
+                          "Work orders": "Your jobs. Clear and ready.",
+                          Maintenance: "Who’s doing what, and when.",
+                          Properties: "Restaurants & rooms",
+                          "Asset register": "Equipment",
+                        } as Record<string, string>
+                      )[view] || view}
               </h1>
               <p>
                 {asset
                   ? `${asset.area} / ${data.properties.find((p) => p.id === asset.propertyId)?.name}`
                   : view === "Overview"
-                    ? "A clear picture of your properties. A plan for what’s next."
-                    : "Connected records. Clear responsibilities. Nothing lost in the handoff."}
+                    ? "Set up the space. Plan the care. Review the results."
+                    : role === "Manager"
+                      ? "One room at a time. Check it, record it, move on."
+                      : role === "Subcontractor"
+                        ? "Start your assigned work. Add proof. Send it for review."
+                        : "Every job has an owner, a date and a next step."}
               </p>
             </div>
             {admin && (
@@ -432,6 +487,12 @@ export default function Home() {
               <button className="back" onClick={() => setSelected(null)}>
                 <ArrowLeft size={16} /> Back to asset register
               </button>
+              {asset.pendingApproval && (
+                <div className="notice">
+                  New equipment submitted by the Manager. The Director must
+                  approve it before it joins the weekly walkthrough.
+                </div>
+              )}
               <div className="asset-top">
                 <div className="asset-image">
                   {asset.photo ? (
@@ -674,195 +735,29 @@ export default function Home() {
                 </section>
               )}
             </>
-          ) : view === "Overview" ? (
-            <>
-              <div className="stats">
-                {[
-                  {
-                    label: "Properties managed",
-                    value: data.properties.length,
-                    icon: Building2,
-                    detail: "Connected spaces",
-                    v: "Properties",
-                  },
-                  {
-                    label: "Registered assets",
-                    value: data.assets.length,
-                    icon: QrCode,
-                    detail: "Every asset, accounted for",
-                    v: "Asset register",
-                  },
-                  {
-                    label: "Upcoming maintenance",
-                    value: openTasks.length,
-                    icon: CalendarDays,
-                    detail: "Scheduled and in progress",
-                    v: "Maintenance",
-                  },
-                  {
-                    label: "Awaiting approval",
-                    value: data.tasks.filter(
-                      (t) => t.status === "Awaiting verification",
-                    ).length,
-                    icon: ClipboardCheck,
-                    detail: "Ready for your review",
-                    v: "Work orders",
-                  },
-                ].map((s) => (
-                  <button
-                    className="stat"
-                    key={s.label}
-                    onClick={() => go(s.v as View)}
-                  >
-                    <div>
-                      {s.label}
-                      <s.icon size={18} />
-                    </div>
-                    <strong>{String(s.value).padStart(2, "0")}</strong>
-                    <p>
-                      {s.detail}
-                      <ArrowUpRight size={14} />
-                    </p>
-                  </button>
-                ))}
-              </div>
-              <div className="section-title">
-                <div>
-                  <h2>
-                    Your properties <span>{data.properties.length}</span>
-                  </h2>
-                  <p>The places you keep running.</p>
-                </div>
-                <button
-                  className="text-button"
-                  onClick={() => go("Properties")}
-                >
-                  View all properties <ArrowUpRight size={15} />
-                </button>
-              </div>
-              <div className="property-grid">
-                {data.properties.map((p, i) => (
-                  <button
-                    className="property-card"
-                    key={p.id}
-                    onClick={() => {
-                      setPropertyId(p.id);
-                      go("Properties");
-                    }}
-                  >
-                    <div className={"property-visual visual-" + i}>
-                      <div className="architectural-grid" />
-                      <span className="visual-label">
-                        {p.name.split(" ").slice(0, 2).join(" ")}
-                        <small>NEW YORK · RESTAURANT</small>
-                      </span>
-                      <span className="photo-tag">
-                        <span /> Operational
-                      </span>
-                    </div>
-                    <div className="property-details">
-                      <div>
-                        <h3>{p.name}</h3>
-                        <ArrowUpRight size={19} />
-                      </div>
-                      <p>
-                        <MapPin size={13} />
-                        {p.address}
-                      </p>
-                      <footer>
-                        <span>
-                          {
-                            data.assets.filter((a) => a.propertyId === p.id)
-                              .length
-                          }{" "}
-                          assets <b>·</b> {p.areas.length} areas
-                        </span>
-                        <span className="badge green">Active</span>
-                      </footer>
-                    </div>
-                  </button>
-                ))}
-                {admin && (
-                  <button
-                    className="add-property"
-                    onClick={() => setModal("property")}
-                  >
-                    <span>
-                      <Plus size={24} />
-                    </span>
-                    <strong>A new space. A fresh start.</strong>
-                    <p>Add a property to your workspace</p>
-                  </button>
-                )}
-              </div>
-              <div className="two-col lower">
-                <section className="panel">
-                  <div className="panel-title">
-                    <h2>On the horizon</h2>
-                    <button
-                      className="text-button"
-                      onClick={() => go("Maintenance")}
-                    >
-                      View schedule <ArrowUpRight size={14} />
-                    </button>
-                  </div>
-                  {openTasks.slice(0, 4).map((t) => (
-                    <button
-                      className="schedule-item"
-                      key={t.id}
-                      onClick={() => {
-                        go("Maintenance");
-                        setSearch(t.title);
-                      }}
-                    >
-                      <div className="date-box">
-                        <small>
-                          {new Date(t.date + "T12:00").toLocaleString("en-US", {
-                            month: "short",
-                          })}
-                        </small>
-                        <strong>{t.date.slice(8)}</strong>
-                      </div>
-                      <div>
-                        <strong>{t.title}</strong>
-                        <p>
-                          {data.assets.find((a) => a.id === t.assetId)?.name}
-                        </p>
-                      </div>
-                      <span className="badge">{t.status}</span>
-                    </button>
-                  ))}
-                  {!openTasks.length && (
-                    <p className="empty">
-                      All caught up. Schedule your next inspection.
-                    </p>
-                  )}
-                </section>
-                <section className="panel">
-                  <div className="panel-title">
-                    <h2>Recent activity</h2>
-                    <Clock3 size={17} />
-                  </div>
-                  {data.events.slice(0, 4).map((e) => (
-                    <div className="activity" key={e.id}>
-                      <span className="activity-icon">
-                        <Check size={14} />
-                      </span>
-                      <div>
-                        <strong>{e.text}</strong>
-                        <p>
-                          {e.actor} · {new Date(e.time).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </section>
-              </div>
-              <div className="footer-note">
-                <ShieldCheck size={14} /> A connected history, from first
-                installation to the next repair.
-              </div>
-            </>
+          ) : [
+              "Overview",
+              "Inspections",
+              "Work orders",
+              "Maintenance",
+            ].includes(view) ? (
+            <Operations
+              key={role + view}
+              data={data}
+              setData={setData}
+              role={role}
+              propertyId={propertyId}
+              setPropertyId={setPropertyId}
+              mode={view === "Maintenance" ? "schedule" : "home"}
+              onAsset={(id) => {
+                setSelected(id);
+                setTab("Overview");
+              }}
+              onRegister={() => setModal("asset")}
+              onSchedule={showSchedule}
+              onSetup={() => go("Properties")}
+              notify={setToast}
+            />
           ) : view === "Properties" ? (
             <>
               <div className="toolbar">
@@ -1076,284 +971,7 @@ export default function Home() {
                 )}
               </div>
             </>
-          ) : (
-            <>
-              <div className="toolbar">
-                <label className="search">
-                  <Search size={17} />
-                  <input
-                    placeholder="Search scheduled work…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </label>
-                <span>
-                  {view === "Maintenance"
-                    ? "Internal schedule · calendar handoff available"
-                    : view === "Inspections"
-                      ? "Assigned to Alex · Demo inspector"
-                      : "Assignments for Sam · Demo contractor"}
-                </span>
-              </div>
-              {view === "Maintenance" && (
-                <div className="notice">
-                  <CalendarDays size={20} />
-                  <div>
-                    <strong>Google Calendar handoff</strong>
-                    <p>
-                      Download an event and import it into Google Calendar.
-                      Includes requested 7-day, 2-day and day-of alarms;
-                      calendar support varies. No live synchronization.
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div className="task-grid">
-                {data.tasks
-                  .filter((t) =>
-                    t.title.toLowerCase().includes(search.toLowerCase()),
-                  )
-                  .filter((t) =>
-                    view === "Work orders"
-                      ? [
-                          "Issue reported",
-                          "Assigned",
-                          "Awaiting verification",
-                          "Verified",
-                        ].includes(t.status)
-                      : true,
-                  )
-                  .map((t) => (
-                    <section className="panel task" key={t.id}>
-                      <div className="panel-title">
-                        <span
-                          className={
-                            "badge " +
-                            (t.status === "Verified"
-                              ? "green"
-                              : t.status === "Issue reported"
-                                ? "amber"
-                                : "")
-                          }
-                        >
-                          {t.status}
-                        </span>
-                        <span className="muted">{t.date}</span>
-                      </div>
-                      <h3>{t.title}</h3>
-                      <button
-                        className="text-button"
-                        onClick={() => {
-                          setSelected(t.assetId);
-                          setTab("Overview");
-                        }}
-                      >
-                        {data.assets.find((a) => a.id === t.assetId)?.name}
-                        <ArrowUpRight size={14} />
-                      </button>
-                      {t.notes && (
-                        <p className="notice">Inspection finding: {t.notes}</p>
-                      )}
-                      {t.repair && <p>Repair: {t.repair}</p>}
-                      {t.evidence && (
-                        <MediaLink path={t.evidence}>
-                          View inspection / repair evidence
-                        </MediaLink>
-                      )}
-                      {t.invoice && (
-                        <p>
-                          <MediaLink path={t.invoice}>View invoice</MediaLink>
-                        </p>
-                      )}
-                      <div className="task-actions">
-                        {view === "Maintenance" && (
-                          <button
-                            className="secondary"
-                            onClick={() => download(t)}
-                          >
-                            <CalendarDays size={15} /> Export calendar event
-                          </button>
-                        )}
-                        {(role === "Inspector" || admin) &&
-                          t.status === "Scheduled" && (
-                            <form
-                              onSubmit={async (e) => {
-                                e.preventDefault();
-                                const f = new FormData(e.currentTarget);
-                                const notes = String(f.get("notes"));
-                                const file = f.get("photo") as File;
-                                try {
-                                  const evidence = file?.size
-                                    ? await readFile(file)
-                                    : undefined;
-                                  const condition = String(f.get("condition"));
-                                  setData((s) => ({
-                                    ...s,
-                                    assets: s.assets.map((a) =>
-                                      a.id === t.assetId
-                                        ? { ...a, condition }
-                                        : a,
-                                    ),
-                                    events: [
-                                      log(
-                                        t.assetId,
-                                        "Inspector checked in and completed checklist",
-                                      ),
-                                      ...s.events,
-                                    ],
-                                  }));
-                                  updateTask(
-                                    t,
-                                    f.get("issue")
-                                      ? "Issue reported"
-                                      : "Awaiting verification",
-                                    { notes, evidence },
-                                  );
-                                } catch (error) {
-                                  setToast((error as Error).message);
-                                }
-                              }}
-                            >
-                              <label className="check">
-                                <input type="checkbox" required /> Equipment
-                                condition checked
-                              </label>
-                              <label className="check">
-                                <input type="checkbox" required /> Operating
-                                observations recorded
-                              </label>
-                              <label className="field">
-                                Condition
-                                <select name="condition">
-                                  <option>Good</option>
-                                  <option>Needs attention</option>
-                                  <option>Out of service</option>
-                                </select>
-                              </label>
-                              <label className="field">
-                                Inspection findings
-                                <textarea
-                                  name="notes"
-                                  required
-                                  placeholder="Record what you observed…"
-                                />
-                              </label>
-                              <label className="field">
-                                Inspection photo
-                                <input
-                                  type="file"
-                                  name="photo"
-                                  accept="image/*"
-                                  capture="environment"
-                                />
-                              </label>
-                              <label className="check">
-                                <input type="checkbox" name="issue" /> Report an
-                                issue for Jesse to review
-                              </label>
-                              <button className="primary">
-                                Check in & submit inspection
-                              </button>
-                            </form>
-                          )}
-                        {admin && t.status === "Issue reported" && (
-                          <button
-                            className="primary"
-                            onClick={() => updateTask(t, "Assigned")}
-                          >
-                            Assign repair to Sam
-                          </button>
-                        )}
-                        {(role === "Contractor" || admin) &&
-                          t.status === "Assigned" && (
-                            <form
-                              onSubmit={async (e) => {
-                                e.preventDefault();
-                                const f = new FormData(e.currentTarget);
-                                try {
-                                  const photo = f.get("photo") as File,
-                                    invoice = f.get("invoice") as File;
-                                  updateTask(t, "Awaiting verification", {
-                                    repair: String(f.get("repair")),
-                                    evidence: photo?.size
-                                      ? await readFile(photo)
-                                      : t.evidence,
-                                    invoice: invoice?.size
-                                      ? await readFile(invoice)
-                                      : undefined,
-                                  });
-                                } catch (error) {
-                                  setToast((error as Error).message);
-                                }
-                              }}
-                            >
-                              <label className="field">
-                                Work performed
-                                <textarea
-                                  name="repair"
-                                  required
-                                  placeholder="Describe the repair and outcome…"
-                                />
-                              </label>
-                              <label className="field">
-                                Repair photograph
-                                <input
-                                  name="photo"
-                                  type="file"
-                                  accept="image/*"
-                                  required
-                                />
-                              </label>
-                              <label className="field">
-                                Invoice (optional)
-                                <input
-                                  name="invoice"
-                                  type="file"
-                                  accept="application/pdf,image/*"
-                                />
-                              </label>
-                              <button className="primary">
-                                Submit for verification
-                              </button>
-                            </form>
-                          )}
-                        {admin && t.status === "Awaiting verification" && (
-                          <>
-                            <button
-                              className="primary"
-                              onClick={() => updateTask(t, "Verified")}
-                            >
-                              Verify completed work
-                            </button>
-                            <button
-                              className="secondary"
-                              onClick={() => updateTask(t, "Assigned")}
-                            >
-                              Return for correction
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </section>
-                  ))}
-              </div>
-              {!data.tasks.some(
-                (t) =>
-                  view !== "Work orders" ||
-                  [
-                    "Issue reported",
-                    "Assigned",
-                    "Awaiting verification",
-                    "Verified",
-                  ].includes(t.status),
-              ) && (
-                <section className="panel empty">
-                  No repair assignments yet. Report an issue from an inspection,
-                  then assign it as Jesse.
-                </section>
-              )}
-            </>
-          )}
+          ) : null}
         </main>
       </div>
       {toast && (
@@ -1611,6 +1229,7 @@ export default function Home() {
                         make: String(f.get("make")) || "Unconfirmed",
                         model: String(f.get("model")) || "Nameplate required",
                         condition: "Good",
+                        pendingApproval: role === "Manager",
                         photo: photo?.size ? await readFile(photo) : undefined,
                         x: Number(f.get("x")),
                         y: Number(f.get("y")),
@@ -1635,13 +1254,23 @@ export default function Home() {
                       setView("Asset register");
                     }
                     if (modal === "schedule") {
+                      if (String(f.get("startDate")) > String(f.get("date")))
+                        throw Error(
+                          "The finish date must be on or after the start date.",
+                        );
                       const t: Task = {
                         id: uid(),
                         assetId: String(f.get("asset")),
                         title: String(f.get("title")),
                         date: String(f.get("date")),
-                        status: "Scheduled",
-                        notes: "",
+                        startDate: String(f.get("startDate")),
+                        kind: String(f.get("kind")) as Task["kind"],
+                        owner: String(f.get("owner")) as Task["owner"],
+                        status:
+                          f.get("owner") === "Subcontractor"
+                            ? "Assigned"
+                            : "Scheduled",
+                        notes: String(f.get("instructions") || ""),
                       };
                       setData((s) => ({
                         ...s,
@@ -1649,9 +1278,11 @@ export default function Home() {
                         events: [
                           log(
                             t.assetId,
-                            "Inspection scheduled for " +
+                            t.title +
+                              " scheduled for " +
                               t.date +
-                              " and assigned to Alex",
+                              " · Assigned to " +
+                              t.owner,
                           ),
                           ...s.events,
                         ],
@@ -1782,23 +1413,55 @@ export default function Home() {
                         defaultValue={selected || data.assets[0]?.id}
                         required
                       >
-                        {data.assets.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.name}
-                          </option>
-                        ))}
+                        {data.assets
+                          .filter(
+                            (a) =>
+                              a.propertyId === property.id &&
+                              !a.pendingApproval,
+                          )
+                          .map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name}
+                            </option>
+                          ))}
                       </select>
                     </label>
                     <label className="field">
-                      Inspection title
+                      Work to do
                       <input
                         name="title"
                         required
                         defaultValue="Equipment condition inspection"
                       />
                     </label>
+                    <div className="form-row">
+                      <label className="field">
+                        Type of work
+                        <select name="kind">
+                          <option>Inspection</option>
+                          <option>Preventive care</option>
+                          <option>Repair</option>
+                        </select>
+                      </label>
+                      <label className="field">
+                        Who does it?
+                        <select name="owner">
+                          <option>Manager</option>
+                          <option>Subcontractor</option>
+                        </select>
+                      </label>
+                    </div>
                     <label className="field">
-                      Due date
+                      Start date
+                      <input
+                        type="date"
+                        name="startDate"
+                        required
+                        defaultValue={new Date().toISOString().slice(0, 10)}
+                      />
+                    </label>
+                    <label className="field">
+                      Finish / due date
                       <input
                         type="date"
                         name="date"
@@ -1806,9 +1469,13 @@ export default function Home() {
                         defaultValue={new Date().toISOString().slice(0, 10)}
                       />
                     </label>
+
                     <label className="field">
-                      Assigned inspector
-                      <input readOnly value="Alex · Demo inspector" />
+                      Instructions / scope of work
+                      <textarea
+                        name="instructions"
+                        placeholder="What should this person do? Reference the approved care plan."
+                      />
                     </label>
                     <p className="muted">
                       Creates one occurrence. Automatic recurring scheduling is
@@ -1820,7 +1487,7 @@ export default function Home() {
                   {busy
                     ? "Saving…"
                     : modal === "schedule"
-                      ? "Create inspection"
+                      ? "Schedule work"
                       : "Save " + (modal === "asset" ? "equipment" : modal)}
                 </button>
               </form>

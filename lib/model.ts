@@ -1,4 +1,4 @@
-export type Role = "Administrator" | "Inspector" | "Contractor";
+export type Role = "Director" | "Manager" | "Subcontractor";
 export type Property = {
   id: string;
   name: string;
@@ -18,16 +18,24 @@ export type Asset = {
   photo?: string;
   x?: number;
   y?: number;
+  pendingApproval?: boolean;
 };
 export type Task = {
   id: string;
   assetId: string;
   title: string;
   date: string;
+  startDate?: string;
+  kind?: "Inspection" | "Preventive care" | "Repair";
+  owner?: "Manager" | "Subcontractor";
+  startedAt?: string;
+  completedAt?: string;
+  returnReason?: string;
   status:
     | "Scheduled"
     | "Issue reported"
     | "Assigned"
+    | "In progress"
     | "Awaiting verification"
     | "Verified";
   notes: string;
@@ -53,7 +61,24 @@ export type Plan = {
   simulated: boolean;
   approved: boolean;
 };
+export type CheckAnswer = {
+  result: "Okay" | "Needs attention" | "Not checked";
+  note: string;
+  reading?: string;
+  photo?: string;
+  careDone?: boolean;
+};
+export type Walkthrough = {
+  id: string;
+  propertyId: string;
+  assetIds: string[];
+  startedAt: string;
+  submittedAt?: string;
+  approvedAt?: string;
+  answers: Record<string, CheckAnswer>;
+};
 export type State = {
+  walkthroughs?: Walkthrough[];
   properties: Property[];
   assets: Asset[];
   tasks: Task[];
@@ -62,6 +87,11 @@ export type State = {
 };
 export const uid = () => crypto.randomUUID();
 const today = new Date().toISOString().slice(0, 10);
+const dayOffset = (days: number) => {
+  const date = new Date(today + "T12:00:00Z");
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
 export const seed: State = {
   properties: [
     {
@@ -115,6 +145,45 @@ export const seed: State = {
       date: today,
       status: "Scheduled",
       notes: "",
+      kind: "Inspection",
+      owner: "Manager",
+      startDate: today,
+    },
+    {
+      id: "preventive-demo",
+      assetId: "range",
+      title: "Planned specialist service · demo",
+      date: dayOffset(3),
+      startDate: dayOffset(1),
+      kind: "Preventive care",
+      owner: "Subcontractor",
+      status: "Assigned",
+      notes:
+        "Example assignment only. Confirm the actual scope with the approved manufacturer manual before performing work.",
+    },
+    {
+      id: "simple-care-demo",
+      assetId: "dishwasher",
+      title: "Record routine care and equipment condition",
+      date: dayOffset(1),
+      startDate: today,
+      kind: "Preventive care",
+      owner: "Manager",
+      status: "Scheduled",
+      notes:
+        "Demo task: follow only the simple care already approved by the Director. Record observations; no manufacturer instructions are simulated.",
+    },
+    {
+      id: "issue-demo",
+      assetId: "refrigerator",
+      title: "Review refrigerator cooling concern",
+      date: today,
+      startDate: today,
+      kind: "Repair",
+      owner: "Subcontractor",
+      status: "Issue reported",
+      notes:
+        "Fictional example: Manager reported unusual cooling. Director decision required before work is assigned.",
     },
   ],
   plans: [
@@ -133,7 +202,7 @@ export const seed: State = {
       id: "initial",
       assetId: "refrigerator",
       text: "Asset registered in Kitchen. Manufacturer identification pending.",
-      actor: "Jesse · Administrator",
+      actor: "Jesse · Director",
       time: new Date().toISOString(),
     },
   ],
@@ -158,5 +227,5 @@ export function calendarFile(task: Task, asset: Asset) {
     .replace(
       /\.\d{3}/,
       "",
-    )}\r\nDTSTART;VALUE=DATE:${day}\r\nSUMMARY:${escape(task.title + " · " + asset.name)}\r\nDESCRIPTION:${escape("Assigned inspector: Demo inspector. Review in Juggle. Calendar handoff; updates do not synchronize.")}\r\n${alarms}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`;
+    )}\r\nDTSTART;VALUE=DATE:${day}\r\nSUMMARY:${escape(task.title + " · " + asset.name)}\r\nDESCRIPTION:${escape(`Assigned to: ${task.owner || "Manager"}. Review in Juggle. Calendar handoff; updates do not synchronize.`)}\r\n${alarms}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`;
 }
