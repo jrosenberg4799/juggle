@@ -1,5 +1,9 @@
 # Juggle — Cocozza Maintenance OS (MVP)
 
+## Current version: Version 2
+
+The operator-focused prototype is Version 2, with Director / Manager / Subcontractor interfaces, a live-data Gantt schedule and guided inspections. See the [Version 2 guide](docs/VERSION-2-GUIDE.md). The top **Interface** dropdown changes the working screens. Open https://juggle-mocha.vercel.app.
+
 ## Version 1 baseline
 
 The initial reviewable prototype is saved as Git tag **v1.0.0**. See the [changelog](CHANGELOG.md), [client workflow guide](docs/CLIENT-WORKFLOW.md), and [versioning instructions](docs/VERSIONING.md). This is the first prototype baseline; known limitations remain documented in the build status.

@@ -1,4 +1,6 @@
-# Juggle prototype status
+# Juggle prototype status — Version 2
+
+The current release adds distinct Director, Manager and Subcontractor interfaces, a live-data Gantt schedule, guided room-by-room walkthroughs and CSV reports. Read [Version 2 guide](VERSION-2-GUIDE.md) for current instructions. The implementation notes below describe the underlying prototype architecture; original Administrator / Inspector / Contractor terminology maps to Director / Manager / Subcontractor.
 
 ## Home-kitchen proof of concept
 

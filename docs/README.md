@@ -4,6 +4,7 @@ Keep project explanations, specifications, diagrams and exported office document
 
 | File | Purpose |
 | --- | --- |
+| `VERSION-2-GUIDE.md` / `.docx` | Current Version 2 operator walkthrough and limitations |
 | `CLIENT-WORKFLOW.md` | Version 1 client workflow snapshot |
 | `CLIENT-WORKFLOW-V1.docx` | Word export of the original Google Doc |
 | `WORKFLOW-V2-DRAFT.md` | Authoritative editable source for the proposed simpler workflow |

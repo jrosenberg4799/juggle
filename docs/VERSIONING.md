@@ -6,6 +6,7 @@
 - Local checkout in this Codex cloud workspace: `/workspace/juggle`
 - Main branch: `main`
 - First prototype baseline: annotated tag `v1.0.0`
+- Operator workflow baseline: annotated tag `v2.0.0` (see Version 2 guide)
 
 The cloud checkout is not a folder on the owner's personal computer. To create a laptop checkout, clone the GitHub repository into the desired local directory. The GitHub repository is the durable shared source of truth.
 
@@ -31,4 +32,4 @@ Review and merge a feature branch before preparing the next milestone. Create ne
 
 ## Deployment
 
-The current live prototype is https://juggle-mocha.vercel.app. Vercel currently uses direct source deployments; GitHub automatic deployment is not connected. A push or tag saves source but does not itself deploy it. The v1.0.0 baseline adds documentation/version metadata to the already deployed prototype; it does not change runtime behavior.
+The current live prototype is https://juggle-mocha.vercel.app. Vercel currently uses direct source deployments; GitHub automatic deployment is not connected. A push or tag saves source but does not itself deploy it. The v1.0.0 baseline preserves the first prototype. The v2.0.0 baseline updates the operator interfaces and workflow; see the Version 2 guide.

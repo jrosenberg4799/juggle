@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 2 — operator workflows (v2.0.0)
+
+- Distinct Director, Manager and Subcontractor interfaces with a visible working selector and level/context labels.
+- Live-data 14-day Gantt schedule, task ownership, start/finish dates, date editing and job drill-down.
+- Guided room-by-room Manager walkthrough with saved drafts, photos/readings and explicit problem reporting.
+- Manager equipment submissions awaiting Director approval; active walkthroughs exclude draft equipment.
+- Preventive care and repair jobs with start, evidence submission, Director approval and correction stages.
+- Operating and inspection CSV reports with formula escaping; calendar-event handoff retained.
+- Existing Supabase records and V1 data preserved; role permissions remain prototype-only.
+- Seven workflow tests plus production-build/TypeScript validation. Hands-on browser/device verification remains pending.
+
+
 ## Version 1 — prototype baseline (v1.0.0)
 
 First saved prototype for client review and the home-kitchen proof of concept.
