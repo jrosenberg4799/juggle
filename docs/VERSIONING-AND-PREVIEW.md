@@ -1,9 +1,11 @@
-# Version numbers and device previews
+# Version numbers and integrated workspace views — 2.6.0
 
-The small version below the Juggle logo comes directly from package.json. Click it to open `/preview`, then select Desktop, iPad or Phone. Rotate switches portrait/landscape. The preview uses the live app in one iframe; resizing does not reload it. Changes made there save normally. The outer canvas scrolls if the chosen device is wider than your screen. Use App to return to the normal interface.
+The normal app opens at `/`. Its permanent top bar contains Workspace, a subtle release number, and **Views** with the current device. Click Views to open or fold the compact screen-size controls. The button always remains visible. Choose Desktop, iPad or Phone; rotate the two device views. Escape closes the options and returns focus to Views. Small screens fold the options after selecting a size.
 
-Versioning: MAJOR.MINOR.PATCH. Major is a breaking workflow/data change; minor is a compatible new feature; patch is a fix or polish. Bump package.json and package-lock.json together with npm version, update CHANGELOG.md and tag the release. This feature is 2.5.0.
+Desktop fills the available space. iPad uses 820×1180 and Phone 390×844; rotation swaps the dimensions. Both fit automatically to the available width and height, never scale above 100%, and show a quiet size/scale caption. The workspace scrolls inside its screen. No separate App exit button, hidden version-link navigation, or sideways outer canvas is required. The former `/preview` address redirects to the integrated app.
 
-Preview dimensions check CSS layout, not physical camera, keyboard or device behavior. Physical-device QA remains necessary.
+The shell contains one stable iframe loading `/workspace`. Device changes update its dimensions, not its URL or React key. That preserves authentication, open forms, inspection drafts and data saves while switching or folding. QR property/asset parameters and email auth callbacks pass through to the workspace. Auth callback credentials are removed from the outer address after being forwarded. The existing workspace code, Supabase tables and storage behavior are unchanged.
 
-Version 2.5.1: click Devices to fold/unfold the selector. The button always remains visible and names the selected device. Folding preserves the running preview. The normal app also shows a Devices link below the logo.
+Version numbers come directly from package.json. MAJOR.MINOR.PATCH: major for breaking workflow/data changes; minor for compatible features; patch for fixes/polish. Update package.json and package-lock.json together, CHANGELOG.md, and the release tag.
+
+Verification: 21 automated tests pass, including device geometry checks across small phone, laptop and large desktop canvases, plus production compilation and TypeScript. Browser tooling is unavailable in this environment; visual interaction, physical-device camera/keyboard behavior, and signed-in end-to-end QA remain pending. Device previews help review CSS layout; they do not replace physical-device checks.

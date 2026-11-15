@@ -22,4 +22,4 @@ Drafts are proposals, not approved requirements. Regenerate Word exports after e
 
 The local folder is `/workspace/juggle` in the Codex cloud workspace. Push commits to GitHub after meaningful changes; synchronization is explicit, not a background folder-sync service. Preserve the original `v1.0.0` tag.
 
-- [Versioning and device preview](VERSIONING-AND-PREVIEW.md) — version 2.5.0.
+- [Versioning and device preview](VERSIONING-AND-PREVIEW.md) — version 2.6.0.

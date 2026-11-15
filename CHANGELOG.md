@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.0
+
+- Integrate device views into the main application frame; remove the separate preview page and App exit button.
+- Permanent Views toggle, selected-device indicator and compact, accessible popover.
+- Fit iPad and phone previews to both available dimensions, with rotation and no sideways canvas scrolling.
+- Preserve the same running workspace and in-progress forms across resizing and folding.
+- Forward QR query parameters and authentication callbacks into the workspace; retain subtle automatic release labels.
+
+
 ## 2.5.1
 
 - Foldable device selector keeps a visible Devices button when closed.

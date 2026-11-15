@@ -1,0 +1,82 @@
+/* Presentation controls are part of the app frame, never part of a task. */
+html:has(.workspace-shell) { scrollbar-gutter: auto; }
+body:has(.workspace-shell) { overflow: hidden; }
+.workspace-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #edf1f6;
+  color: #243650;
+}
+.workspace-chrome {
+  flex: 0 0 48px;
+  height: 48px;
+  min-height: 48px;
+  flex-wrap: nowrap;
+  position: relative;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left));
+  border-bottom: 1px solid #dde3ec;
+  background: #fff;
+}
+.chrome-context { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.chrome-mark { display: grid; place-items: center; color: #546b89; }
+.chrome-version { margin-left: 3px; padding-left: 12px; border-left: 1px solid #dfe5ee; font-size: 10px; font-weight: 400; color: #79869a; font-variant-numeric: tabular-nums; }
+.chrome-views { display: flex; align-items: center; }
+.chrome-view-toggle {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 34px; padding: 6px 10px;
+  border: 1px solid #d9e0ea; border-radius: 7px;
+  background: #fff; color: #344760; font-size: 12px; font-weight: 600;
+}
+.chrome-view-toggle:hover, .chrome-view-toggle[aria-expanded="true"] { background: #f3f6fb; border-color: #b5c3d7; }
+.chrome-current { margin-left: 3px; padding-left: 9px; border-left: 1px solid #dfe5ee; font-weight: 400; color: #65768d; }
+.chrome-view-toggle .is-open { transform: rotate(180deg); }
+.chrome-view-options {
+  position: absolute; top: calc(100% + 8px); right: 16px;
+  display: flex; align-items: center; gap: 10px; padding: 12px;
+  border: 1px solid #d7dfeb; border-radius: 11px; background: white;
+  box-shadow: 0 12px 32px #1b2d4920, 0 2px 5px #1b2d4908;
+}
+.chrome-view-options[hidden] { display: none; }
+.chrome-options-label { font-size: 11px; font-weight: 500; color: #6a7c94; padding: 0 4px; }
+.chrome-segments { display: flex; gap: 3px; padding: 3px; border: 1px solid #e0e6ef; border-radius: 8px; background: #f4f6fa; }
+.chrome-segments button {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 36px; padding: 7px 12px; border: 1px solid transparent; border-radius: 5px;
+  background: transparent; color: #63758e; font-size: 12px; font-weight: 500;
+}
+.chrome-segments button:hover { background: #e9eef7; color: #24436c; }
+.chrome-segments button[aria-pressed="true"] { background: #fff; color: #1749e6; border-color: #d9e1ef; box-shadow: 0 1px 3px #1833540d; }
+.chrome-rotate { display: grid; place-items: center; width: 36px; min-height: 36px; border: 1px solid #dfe5ee; border-radius: 7px; background: white; color: #536d90; }
+.chrome-rotate:disabled { opacity: .35; cursor: default; }
+.workspace-chrome button:focus-visible { outline: 2px solid #1749e6; outline-offset: 3px; }
+.workspace-canvas { display: flex; flex: 1; flex-direction: column; min-height: 0; width: 100%; max-width: none; margin: 0; padding: 24px 24px 12px; }
+.workspace-device-stage { flex: 1; min-height: 0; min-width: 0; display: flex; align-items: center; justify-content: center; }
+.workspace-device { flex-shrink: 0; position: relative; overflow: hidden; border-radius: 14px; background: white; outline: 1px solid #cbd5e2; box-shadow: 0 10px 36px #233d611a, 0 2px 5px #233d6108; }
+.workspace-live-frame { position: absolute; top: 0; left: 0; display: block; max-width: none; border: 0; transform-origin: top left; background: #f2f5fa; }
+.workspace-device-caption { flex: 0 0 30px; display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 10px; font-size: 10px; font-weight: 500; color: #687b96; font-variant-numeric: tabular-nums; }
+.workspace-device-caption span { color: #a3b1c5; }
+.workspace-shell[data-device="desktop"] .workspace-canvas { padding: 0; }
+.workspace-shell[data-device="desktop"] .workspace-device { border-radius: 0; outline: 0; box-shadow: none; }
+.workspace-shell-loading { padding: 24px; font-size: 13px; color: #64748b; }
+@media (max-width: 720px) {
+  .workspace-chrome { flex-basis: 46px; gap: 8px; padding-right: max(12px, env(safe-area-inset-right)); padding-left: max(12px, env(safe-area-inset-left)); }
+  .chrome-context { gap: 6px; }
+  .chrome-context > span:nth-child(2) { display: none; }
+  .chrome-version { margin-left: 0; padding-left: 0; border-left: 0; }
+  .chrome-view-toggle { min-height: 36px; }
+  .chrome-view-options { right: 8px; left: 8px; gap: 8px; justify-content: center; padding: 10px; }
+  .chrome-options-label { display: none; }
+  .chrome-segments { flex: 1; }
+  .chrome-segments button { flex: 1; min-height: 44px; padding: 6px; gap: 5px; font-size: 11px; }
+  .chrome-rotate { width: 40px; min-height: 44px; }
+  .workspace-canvas { padding: 14px 12px 6px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chrome-view-toggle > svg:last-child { transition: transform 120ms ease; }
+}

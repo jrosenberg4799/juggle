@@ -1166,3 +1166,5 @@ html {
     font-size: 16px;
   }
 }
+
+.unified-app .sidebar .brand { border: 0; background: transparent; text-align: left; color: inherit; }

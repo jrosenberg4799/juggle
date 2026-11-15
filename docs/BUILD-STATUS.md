@@ -1,4 +1,6 @@
-# Juggle prototype status — Version 2.4
+# Juggle prototype status — Version 2.6
+
+Integrated Views controls now live in the main app frame. See [versioning and views](VERSIONING-AND-PREVIEW.md).
 
 The [shared design guide](SHARED-DESIGN.md) describes consistent page boundaries and desktop/iPad/phone layout rules. No data schema or persistence changes were made in this release.
 

@@ -1,8 +1,8 @@
 # Juggle — Cocozza Maintenance OS (MVP)
 
-## Current version: Version 2.5 — version label and device preview
+## Current version: Version 2.6 — integrated workspace views
 
-Click the small version below the logo for Desktop / iPad / Phone previews and rotation. See [versioning and preview](docs/VERSIONING-AND-PREVIEW.md).
+The permanent **Views** button in the top bar opens Desktop / iPad / Phone controls and rotation. Fold the options without losing the button or your current work. See [versioning and preview](docs/VERSIONING-AND-PREVIEW.md).
 
 All screens now use shared header, status, title, panel and action boundaries, with desktop/iPad/phone layouts. See the [shared design guide](docs/SHARED-DESIGN.md). Real cloud saves and private image storage continue unchanged.
 
