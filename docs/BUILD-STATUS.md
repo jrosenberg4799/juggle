@@ -1,42 +1,58 @@
-# First-pass MVP status
+# Juggle prototype status
 
-## Functional in browser-local demo mode
-- Responsive Kitchen White interface, navigation and administrator/inspector/contractor demo role switch.
-- Properties, client names, areas, equipment registration and condition changes.
-- Image and PDF file reading, persisted with records in localStorage (8 MB individual upload limit; browser total storage quota may be lower).
-- PDF display plus a separate schematic equipment-position grid. Pins are not yet overlaid on PDF pages.
-- Property/asset QR generation and URL destinations. QR records created locally cannot be opened on another device until shared database persistence is wired.
-- One-off inspection scheduling, check-in, checklist, findings and photos.
-- Manual issue triage, contractor assignment, repair photograph/invoice submission, return and verification.
-- Actor/timestamp activity history. Local history is editable via browser tools; it is not a production audit ledger.
-- Downloadable ICS event handoff with seven-day, two-day and day-of display alarms. Import and notifications depend on the calendar client. No Google synchronization.
-- Clearly labeled simulated recommendations and administrator approval.
+## Home-kitchen proof of concept
 
-## Not yet connected
-- Supabase authentication, database persistence and private storage adapters. Dependency and fail-closed foundation migration are supplied; this is not production-ready RBAC.
-- AI image extraction and source-backed internet research. API route intentionally responds 503 rather than offering an unauthenticated paid API.
-- Automatic recurrence generation, Google OAuth, live reminders, cross-device records.
-- On-plan PDF pin overlay, multi-page positioning and drag-to-place editing.
+Register a real appliance in **My home kitchen**, upload a photograph/nameplate, print its QR label, scan with a phone, and sign in with the same account. The record, inspection, repair and service history remain linked to the appliance. Print from the stable production hostname.
 
-## Agreed scope
-Online only; one Jesse-managed calendar; manual review before assignment and repair verification; fictional restaurant for sales demonstration; future client login. No payments, offline sync, CAD/3D, automatic compliance claims or granular permission editor.
+## Functional
 
-## Local development
-`npm ci`, then `npm run dev`. Validate using `npm run build` and `npm run typecheck`.
+- Responsive Kitchen White Next.js application, property/area/asset forms and dashboard.
+- Supabase email/password authentication with confirmation email; one owner's workspace shared across their signed-in devices.
+- Owner-only RLS on `prototype_workspaces`; optimistic revision checks prevent silent overwrites across devices. Reload before switching the active editing device.
+- Private object storage for JPEG/PNG/WebP images and PDF files, 8 MB each. PostgreSQL stores file references only; a database constraint rejects inline/Base64 and local-only media.
+- Expiring signed URLs generated for authorized media views, not persisted in records.
+- Browser-local fictional demo with IndexedDB media when signed out. It remains separate from the real home-kitchen account.
+- Property/asset QR destinations and printable QR labels.
+- PDF floor-plan viewer plus a separate schematic equipment-position grid. Pins do not overlay PDF pages yet.
+- One-off inspections, checklist/check-in, findings, condition and photograph capture.
+- Manual triage, contractor assignment, repair evidence/invoice, administrator verification or return.
+- Timestamped asset history with evidence references. Prototype JSON history is not a tamper-proof audit log.
+- Calendar ICS handoff with requested seven-day, two-day and day-of alarms. Import and reminders depend on the calendar client.
+- Explicitly simulated maintenance recommendations, with administrator approval.
 
-## Vercel
-Import `jrosenberg4799/juggle` as a Next.js project. Root is repository root. Default build `npm run build`; Vercel detects Next.js output. No secrets are required to run the browser-local demo. Environment variables in `.env.example` are reserved for the next integration pass; setting them alone does not activate integrations.
+## Simulated or deferred
 
-Supabase project selected by owner: `mwpavowhwzxczuxqfebw` (`https://mwpavowhwzxczuxqfebw.supabase.co`). No keys have been retrieved or committed. Apply `supabase/001_foundation.sql` only to a development project. This migration deliberately blocks writes to operational tables until assignment-specific policies and adapters are completed and tested; do not treat it as a finished backend.
+- Administrator/inspector/contractor role switching is simulated within the workspace owner's account. Separate worker accounts and production role policies are not implemented.
+- AI extraction, live manufacturer research and verified maintenance sources are not connected. The paid research endpoint deliberately returns 503.
+- Automatic recurring occurrence generation, Google OAuth, synchronization and notifications.
+- Client login, full normalized operational schema, PDF-page pin overlays, offline support and automatic orphan-file cleanup.
+- Multi-user collaborative editing: one active editor at a time; conflicts are surfaced rather than merged.
 
-## Demo script
-1. As Jesse, add a property, area and refrigerator photo.
-2. Open the equipment record, show its QR and maintenance tab.
-3. Add a simulated recommendation, approve, schedule an inspection.
-4. Switch to Inspector. Check checklist items, describe a problem and select Report an issue.
-5. Switch to Administrator. Assign the issue to Sam from Work orders.
-6. Switch to Contractor. Document repair, attach photograph/invoice, submit.
-7. Switch to Administrator. Verify; open asset Service history.
+## Database and storage
 
-## Verification
-Production build and TypeScript checks passed on the first implementation. Browser end-to-end verification remains pending available browser tooling. External integrations have not been validated.
+Project: `mwpavowhwzxczuxqfebw`. Applied migrations: `002_home_prototype.sql` and `003_prototype_conflict_detection.sql`. The earlier `docs/architecture-drafts/normalized-foundation.sql` is a **future, unapplied schema draft**, not part of the active prototype schema. Do not run the entire directory as an ordered migration suite without reconciling that draft first.
+
+Bucket: `maintenance-evidence`, private, user-ID-prefixed object paths, owner-only upload/read policies. No service-role key is used by the application. Signing out retains local demo files; resetting workspace records retains cloud objects.
+
+## Development and deployment
+
+`npm ci`, `npm run dev`; validate with `npm run build` and `npm run typecheck`. Set the Supabase URL/publishable key from `.env.example` for the connected prototype. No OpenAI or Google secret is needed for the currently labeled demo features.
+
+Vercel project `juggle`, team `j-1088`. Direct source deployment is used until the owner adds a GitHub login connection in Vercel. Source remains committed at `jrosenberg4799/juggle`.
+
+In Supabase Authentication → URL Configuration, set the Site URL and allowed redirect URLs to the stable deployed HTTPS origin. Account creation sends a confirmation email; confirm, return to the application and sign in. If the redirect isn't configured yet, the confirmation may land on the default localhost URL; return manually and sign in after confirmation.
+
+## Walkthrough
+
+1. Sign in / create an account. The connected workspace begins with My home kitchen.
+2. Register the refrigerator, upload its photograph, enter make/model from its nameplate.
+3. Open Asset QR code → Print QR label. Scan on phone and sign in with the same account.
+4. Add/approve a clearly simulated maintenance recommendation and schedule an inspection.
+5. Switch to Inspector; submit checklist, photograph and an issue.
+6. Switch to Administrator; assign repair to Sam.
+7. Switch to Contractor; describe repair, attach photo/invoice, submit.
+8. Switch to Administrator; verify and inspect Service history.
+
+## Verification limits
+
+Production compilation and TypeScript checks pass. Supabase migrations applied successfully and security advisor reported no findings. Schema constraints and private bucket configuration are checked separately. Browser, physical printer, phone-camera scan, account email-delivery and a full live upload walkthrough require hands-on verification; these are not claimed as tested.
